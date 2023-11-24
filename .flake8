@@ -1,0 +1,64 @@
+[flake8]
+exclude =
+    .git,
+    .pybuild,
+    .eggs,
+    __pycache__,
+    .venv
+
+max_line_length = 88
+
+ignore =
+    #Don't require docstrings on magic methods.
+    D105,
+
+    #Don't require docstrings for __init__ methods.
+    D107
+
+    #Don't require imperative mood docstrings.
+    D401,
+
+    # Line break occurred before a binary operator
+    W503,
+
+    # Whitespace before ':'
+    E203,
+
+    # Don't error on TODOs
+    T000,
+
+    ################################################################################################
+    ################################################################################################
+    ################################################################################################
+    # TODO - Remove these soon!!!
+
+    # Missing Docstring in public module
+    D100,
+
+    # Missing Docstring in public module
+    D101,
+
+    # Missing Docstring in public module
+    D102,
+
+    # Missing docstring in public function
+    D103,
+
+    # Missing docstring in public package
+    D104,
+
+    # Missing docstring in public nested class
+    D106,
+
+    # isort found an import in the wrong position
+    I001,
+
+    # isort expected 1 blank line in imports, found 0
+    I003,
+
+    # isort found an unexpected blank line in imports
+    I004,
+
+    ################################################################################################
+    ################################################################################################
+    ################################################################################################

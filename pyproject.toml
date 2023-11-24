@@ -1,0 +1,42 @@
+[tool.poetry]
+name = "icekube"
+version = "1.0.0"
+description = ""
+authors = ["Mohit Gupta <mohit.gupta@withsecure.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+kubernetes = "*"
+neo4j = { git = "https://github.com/neo4j/neo4j-python-driver.git", branch = "4.0" }
+typer = "*"
+pydantic = "*"
+tqdm = "^4.66.1"
+
+[tool.poetry.group.dev.dependencies]
+types-pyyaml = "*"
+ipython = "*"
+flake8 = "*"
+flake8-comprehensions = "*"
+flake8-debugger = "*"
+flake8-docstrings = "*"
+flake8-isort = "*"
+flake8-mutable = "*"
+flake8-todo = "*"
+isort = {version = "^4.3.21", extras = ["pyproject"]}
+mypy = "*"
+pyflakes = {git = "https://github.com/pycqa/pyflakes", rev = "c688d2b02ac6e3416775b88d6411ee6a3e8a51ec"}
+pytest = "*"
+pytest-cov = "*"
+rope = "*"
+pydocstyle = "*"
+black = "*"
+pdbpp = "*"
+pyrepl = {git = "https://github.com/pypy/pyrepl"}
+setuptools = "*"
+
+[tool.poetry.scripts]
+icekube = 'icekube.cli:app'
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
