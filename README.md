@@ -34,6 +34,24 @@ It is possible to filter out specific resource types from enumeration. This can 
 
 Sensitive data from secrets are not stored in IceKube, data retrieved from the Secret resource type have their data fields deleted on ingestion. It is recommended to include secrets as part of the query if possible as IceKube can still analyse the secret type and relevant annotations to aid with attack path generation. 
 
+## Not sure where to start?
+
+Here is a quick introductory way on running IceKube for those new to the project:
+
+* `poetry install` - Installs dependancies using `poetry`
+* `poetry shell` - Create a shell within the python environment
+* `docker-compose up -d` - Creates the neo4j docker container with easy to use network and environment settings (give this a minute for `neo4j` to start up)
+* `icekube run` - Analyse a cluster using IceKube - this assumes your `kubectl` context is set appropriately to target a cluster
+* Open the neo4j browser at `http://localhost:7474/`
+* On the login form, simply click `Connect` - wait for the connection to be established
+* Click the cog wheel on the bottom left to open settings
+* Near the bottom of the new side-pane, de-select `Connect result nodes`
+* Enter the following query into the query bar at the top
+    * `MATCH p = shortestPath((src)-[*]->(cr:ClusterRole {name: 'cluster-admin'})) WHERE ALL (r in relationships(p) WHERE EXISTS (r.attack_path)) AND (src:ServiceAccount OR src:Pod or src:User or src:Group) AND all(n in [[x in nodes(p)][-2]] WHERE (n:ClusterRoleBinding)-[:GRANTS_PERMISSION]->(cr)) RETURN p`
+    * This will find routes to cluster administrator from service accounts, pods, users, or groups
+* Of the new window made with the query, click the Fullscreen button
+* Roam around the graph generated, clicking on nodes or relationships to get more details on the right where wanted
+
 ## Example Cypher Queries
 
 The following will find the shortest path from a Pod within the namespace `starting` to the ClusterRole `cluster-admin` using `attack_path` relationships
