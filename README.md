@@ -20,7 +20,7 @@ Resource types can also be filtered from IceKube, instructions can be found belo
 
 ## Usage
 
-* `icekube enumerate` - Will enumerate all resources, and saves them into `neo4j` with generic relationships generated (note: not attack part relationships)
+* `icekube enumerate` - Will enumerate all resources, and saves them into `neo4j` with generic relationships generated (note: not attack path relationships)
 * `icekube attack-path` - Generates attack path relationships within `neo4j`, these are identified with relationships having the property `attack_path` which is set to `1`
 * `icekube run` - Does both `enumerate` and `attack-path`, this will be the main option for quickly running IceKube against a cluster
 * `icekube purge` - Removes everything from the `neo4j` database
