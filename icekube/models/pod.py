@@ -172,7 +172,6 @@ class Pod(Resource):
         # Not all of these give direct node compromise, but will grant enough
         # permissions to maybe steal certificates to help with API server
         # as the node, or the like
-        # TODO: account for wildcards for /home/*/.ssh/, etc
         dangerous_paths = [
             "/etc/kubernetes/admin.conf",
             "/etc/kubernetes/kubeconfig",
@@ -248,7 +247,7 @@ class Pod(Resource):
         initial: bool = True,
     ) -> List[RELATIONSHIP]:
         relationships = super().relationships()
-        # TODO: Also check if mounted
+
         if self.service_account:
             relationships += [(self, "USES_ACCOUNT", self.service_account)]
         if self.node:

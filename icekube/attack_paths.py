@@ -57,15 +57,9 @@ attack_paths = {
         """,
     # Subject -> Secret
     "ACCESS_SECRET": "MATCH (src)-[:GRANTS_GET|GRANTS_LIST|GRANTS_WATCH]->(dest:Secret)",
-    # Create SA long lived token
-    # TODO: Need to account for then having permission to read secret
-    # "CREATE_SA_TOKEN_VIA_SECRET": "MATCH (src)-[:GRANTS_SECRET_CREATE]->"
-    # "(ns:Namespace)"
-    # "<-[:WITHIN_NAMESPACE]-(dest:ServiceAccount)",
     # Generate service account token
     "GENERATE_TOKEN": "MATCH (src)-[:GRANTS_TOKEN_CREATE]->(dest:ServiceAccount)",
     # RBAC escalate verb to change a role to be more permissive
-    # TODO: expand to roles for other entities
     "RBAC_ESCALATE_TO": [
         # RoleBindings
         """
@@ -78,7 +72,6 @@ attack_paths = {
         WHERE (src)-[:GRANTS_PERMISSION]->(role)
         """,
     ],
-    # TODO: RBAC Bind
     # Subject -> User / Group / ServiceAccount
     "GENERATE_CLIENT_CERTIFICATE": """
         MATCH (src)-[:GRANTS_CERTIFICATESIGNINGREQUESTS_CREATE]->(cluster:Cluster), (dest)
