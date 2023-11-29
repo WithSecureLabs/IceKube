@@ -731,21 +731,16 @@ files = [
 
 [[package]]
 name = "neo4j"
-version = "4.0.dev0"
+version = "4.4.11"
 description = "Neo4j Bolt driver for Python"
 optional = false
-python-versions = "*"
-files = []
-develop = false
+python-versions = ">=3.6"
+files = [
+    {file = "neo4j-4.4.11.tar.gz", hash = "sha256:2fb4693d524e7661ed6b0ea5b4e3a6272dba2567809ecd1d63f1c896ebcfc241"},
+]
 
 [package.dependencies]
 pytz = "*"
-
-[package.source]
-type = "git"
-url = "https://github.com/neo4j/neo4j-python-driver.git"
-reference = "4.0"
-resolved_reference = "901337d7f392ad8a6765da6848e90fb9f44fabe8"
 
 [[package]]
 name = "oauthlib"
@@ -1586,4 +1581,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "83f23fd0b974c36153aecbe01bd873be6ebc9f415366493640fd7c96778080e0"
+content-hash = "5c145d232696768e7a4ae19c75d27322adae5d2de0befff8556226dd4a19f1c6"

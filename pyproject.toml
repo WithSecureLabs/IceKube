@@ -7,7 +7,7 @@ authors = ["Mohit Gupta <mohit.gupta@withsecure.com>"]
 [tool.poetry.dependencies]
 python = "^3.8"
 kubernetes = "*"
-neo4j = { git = "https://github.com/neo4j/neo4j-python-driver.git", branch = "4.0" }
+neo4j = "^4.0"
 typer = "*"
 pydantic = "*"
 tqdm = "^4.66.1"
