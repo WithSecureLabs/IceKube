@@ -5,12 +5,13 @@ from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
+from icekube.models._helpers import load, save
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.node import Node
 from icekube.models.secret import Secret
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.relationships import Relationship
-from pydantic import root_validator
+from pydantic import model_validator
 
 CAPABILITIES = [
     "AUDIT_CONTROL",
@@ -68,41 +69,55 @@ class Pod(Resource):
     hostNetwork: bool
     supported_api_groups: List[str] = [""]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_service_account(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
         sa = data.get("spec", {}).get("serviceAccountName")
         if sa:
+<<<<<<< HEAD
             values["service_account"] = ServiceAccount(
                 name=sa,
                 namespace=values.get("namespace"),
+=======
+            values = save(
+                values,
+                "service_account",
+                mock(
+                    ServiceAccount,
+                    name=sa,
+                    namespace=values.get("namespace"),
+                ),
+>>>>>>> e353116 (poetry update - requires pydantic bug fixes)
             )
         else:
-            values["service_account"] = None
+            values = save(values, "service_account", None)
+
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_node(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
         node = data.get("spec", {}).get("nodeName")
         if node:
+<<<<<<< HEAD
             values["node"] = Node(name=node)
+=======
+            values = save(values, "node", mock(Node, name=node))
+>>>>>>> e353116 (poetry update - requires pydantic bug fixes)
         else:
-            values["node"] = None
+            values = save(values, "node", None)
 
         return values
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_containers(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
 
-        values["containers"] = data.get("spec", {}).get("containers", [])
+        return save(values, "containers", data.get("spec", {}).get("containers", []))
 
-        return values
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_capabilities(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
 
         containers = data.get("spec", {}).get("containers", [])
         capabilities = set()
@@ -120,13 +135,11 @@ class Pod(Resource):
 
             capabilities.update(add)
 
-        values["capabilities"] = list(capabilities)
+        return save(values, "capabilities", list(capabilities))
 
-        return values
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_privileged(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
 
         containers = data.get("spec", {}).get("containers", [])
         privileged = False
@@ -136,35 +149,31 @@ class Pod(Resource):
             if context.get("privileged", False):
                 privileged = True
 
-        values["privileged"] = privileged
+        return save(values, "privileged", privileged)
 
-        return values
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_host_path_volumes(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
         volumes = data.get("spec", {}).get("volumes") or []
         host_volumes = [x for x in volumes if "hostPath" in x and x["hostPath"]]
 
-        values["host_path_volumes"] = [x["hostPath"]["path"] for x in host_volumes]
+        return save(
+            values, "host_path_volumes", [x["hostPath"]["path"] for x in host_volumes]
+        )
 
-        return values
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_host_pid(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
 
-        values["hostPID"] = data.get("spec", {}).get("hostPID") or False
+        return save(values, "hostPID", data.get("spec", {}).get("hostPID") or False)
 
-        return values
-
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_host_network(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
 
-        values["hostNetwork"] = data.get("spec", {}).get("hostNetwork") or False
-
-        return values
+        return save(
+            values, "hostNetwork", data.get("spec", {}).get("hostNetwork") or False
+        )
 
     @property
     def dangerous_host_path(self) -> bool:

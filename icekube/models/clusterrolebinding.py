@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional, Union
 
+from icekube.models._helpers import load, save
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.clusterrole import ClusterRole
 from icekube.models.group import Group
@@ -10,7 +11,7 @@ from icekube.models.role import Role
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.models.user import User
 from icekube.relationships import Relationship
-from pydantic import root_validator
+from pydantic import model_validator
 from pydantic.fields import Field
 
 
@@ -68,17 +69,20 @@ class ClusterRoleBinding(Resource):
         "authorization.openshift.io",
     ]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_role_and_subjects(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
 
         role_ref = data.get("roleRef")
         if role_ref:
-            values["role"] = get_role(role_ref)
+            role = get_role(role_ref)
         else:
-            values["role"] = ClusterRole(name="")
+            role = ClusterRole(name="")
 
-        values["subjects"] = get_subjects(data.get("subjects", []))
+        subjects = get_subjects(data.get("subjects", []))
+
+        values = save(values, "role", role)
+        values = save(values, "subjects", subjects)
 
         return values
 

@@ -5,10 +5,11 @@ import logging
 import traceback
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
+from icekube.models._helpers import load, save
 from icekube.relationships import Relationship
 from icekube.utils import to_camel_case
 from kubernetes import client
-from pydantic import BaseModel, Field, root_validator
+from pydantic import BaseModel, Field, model_validator
 
 logger = logging.getLogger(__name__)
 
@@ -50,12 +51,12 @@ class Resource(BaseModel):
 
         return all(getattr(self, x) == getattr(other, x) for x in comparison_points)
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_missing_required_fields(cls, values):
-        if not all(x in values for x in ["apiVersion", "kind", "plural"]):
+        if not all(load(values, x) for x in ["apiVersion", "kind", "plural"]):
             from icekube.kube import api_resources, preferred_versions
 
-            test_kind = values.get("kind", cls.__name__)  # type: ignore
+            test_kind = load(values, "kind", cls.__name__)  # type: ignore
 
             for x in api_resources():
                 if x.kind == test_kind:
@@ -69,8 +70,10 @@ class Resource(BaseModel):
                 # Nothing found, setting them to blank
 
                 def get_value(field):
-                    if field in values:
+                    if isinstance(values, dict) and field in values:
                         return values[field]
+                    elif not isinstance(values, dict) and getattr(values, field):
+                        return getattr(values, field)
 
                     if cls.__fields__[field].default:
                         return cls.__fields__[field].default
@@ -80,20 +83,29 @@ class Resource(BaseModel):
 
                     return "N/A"
 
-                values["apiVersion"] = get_value("apiVersion")
-                values["kind"] = get_value("kind")
-                values["plural"] = get_value("plural")
+                for t in ["apiVersion", "kind", "plural"]:
+                    values = save(values, t, get_value(t))
 
                 return values
 
-            if "apiVersion" not in values:
-                values["apiVersion"] = api_resource.group
+            if isinstance(values, dict):
+                if "apiVersion" not in values:
+                    values["apiVersion"] = api_resource.group
 
-            if "kind" not in values:
-                values["kind"] = api_resource.kind
+                if "kind" not in values:
+                    values["kind"] = api_resource.kind
 
-            if "plural" not in values:
-                values["plural"] = api_resource.name
+                if "plural" not in values:
+                    values["plural"] = api_resource.name
+            else:
+                if not values.apiVersion:
+                    values.apiVersion = api_resource.group
+
+                if not values.kind:
+                    values.kind = api_resource.kind
+
+                if not values.plural:
+                    values.plural = api_resource.name
 
         return values
 

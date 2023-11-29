@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 from typing import List, Union
 
+from icekube.models._helpers import load, save
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.group import Group
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.models.user import User
-from pydantic import root_validator
+from pydantic import model_validator
 from pydantic.fields import Field
 
 
@@ -17,28 +18,32 @@ class SecurityContextConstraints(Resource):
     groups: List[Group]
     supported_api_groups: List[str] = ["security.openshift.io"]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_users_and_groups(cls, values):
-        data = json.loads(values.get("raw", {}))
+        data = json.loads(load(values, "raw", "{}"))
 
-        users = data.get("users", [])
-        values["users"] = []
-        for user in users:
+        raw_users = data.get("users", [])
+        users: List[Union[User, ServiceAccount]] = []
+        for user in raw_users:
             if user.startswith("system:serviceaccount:"):
                 ns, name = user.split(":")[2:]
-                values["users"].append(
+                users.append(
                     ServiceAccount(
+                        ServiceAccount,
                         name=name,
                         namespace=ns,
                     ),
                 )
             else:
-                values["users"].append(User(name=user))
+                users.append(User(name=user))
 
-        groups = data.get("groups", [])
-        values["groups"] = []
-        for group in groups:
-            values["groups"].append(Group(name=group))
+        groups = []
+        raw_groups = data.get("groups", [])
+        for group in raw_groups:
+            groups.append(Group(name=group))
+
+        values = save(values, "users", users)
+        values = save(values, "groups", groups)
 
         return values
 

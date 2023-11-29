@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 from typing import List
 
+from icekube.models._helpers import load, save
 from icekube.models.base import Resource
 from icekube.models.policyrule import PolicyRule
-from pydantic import root_validator
+from pydantic import model_validator
 from pydantic.fields import Field
 
 
@@ -16,14 +17,14 @@ class Role(Resource):
         "authorization.openshift.io",
     ]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_role(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
 
-        if "rules" not in values:
-            values["rules"] = []
+        rules = []
+        raw_rules = data.get("rules") or []
 
-        for rule in data.get("rules", []) or []:
-            values["rules"].append(PolicyRule(**rule))
+        for rule in raw_rules:
+            rules.append(PolicyRule(**rule))
 
-        return values
+        return save(values, "rules", rules)

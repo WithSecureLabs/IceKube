@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 from typing import List
 
+from icekube.models._helpers import load, save
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.secret import Secret
 from icekube.relationships import Relationship
-from pydantic import root_validator
+from pydantic import model_validator
 from pydantic.fields import Field
 
 
@@ -14,25 +15,22 @@ class ServiceAccount(Resource):
     secrets: List[Secret] = Field(default_factory=list)
     supported_api_groups: List[str] = [""]
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def inject_secrets(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+        data = json.loads(load(values, "raw", "{}"))
 
-        if "secrets" not in values:
-            values["secrets"] = []
+        secrets = []
+        raw_secrets = data.get("secrets") or []
 
-        if "secrets" in data and data["secrets"] is None:
-            data["secrets"] = []
-
-        for secret in data.get("secrets", []):
-            values["secrets"].append(
+        for secret in raw_secrets:
+            secrets.append(
                 Secret(  # type: ignore
                     name=secret.get("name", ""),
                     namespace=data.get("metadata", {}).get("namespace", ""),
                 )
             )
 
-        return values
+        return save(values, "secrets", secrets)
 
     def relationships(
         self,
