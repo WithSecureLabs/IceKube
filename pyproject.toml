@@ -1,15 +1,15 @@
 [tool.poetry]
 name = "icekube"
-version = "1.0.2"
+version = "1.0.3"
 description = ""
 authors = ["Mohit Gupta <mohit.gupta@withsecure.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-kubernetes = "*"
+kubernetes = "^28.1"
 neo4j = "^4.0"
-typer = "*"
-pydantic = "2.4.2"
+typer = "^0.9"
+pydantic = "~2.4.2"
 tqdm = "^4.66.1"
 
 [tool.poetry.group.dev.dependencies]
