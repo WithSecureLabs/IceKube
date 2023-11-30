@@ -105,6 +105,13 @@ class Resource(BaseModel):
             return ""
 
     @property
+    def resource_definition_name(self) -> str:
+        if self.api_group:
+            return f"{self.plural}.{self.api_group}"
+        else:
+            return self.plural
+
+    @property
     def unique_identifiers(self) -> Dict[str, str]:
         ident = {
             "apiGroup": self.api_group,

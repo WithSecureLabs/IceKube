@@ -1,6 +1,5 @@
 import json
 import logging
-from collections import defaultdict
 from pathlib import Path
 from typing import Iterator, List, Optional, cast
 
@@ -78,15 +77,20 @@ def download(output_dir: str):
     with open(path / "_metadata.json", "w") as fs:
         fs.write(json.dumps(metadata, indent=2, default=str))
 
-    sorted_resources = defaultdict(list)
+    current_type = None
+    current_group = []
 
     for resource in resources:
-        if resource.raw:
-            sorted_resources[resource.plural].append(json.loads(resource.raw))
+        if current_type is None:
+            current_type = resource.resource_definition_name
+        elif current_type != resource.resource_definition_name:
+            with open(path / f"{current_type}.json", "w") as fs:
+                fs.write(json.dumps(current_group, indent=4, default=str))
+            current_group = []
+            current_type = resource.resource_definition_name
 
-    for plural, res in sorted_resources.items():
-        with open(path / f"{plural}.json", "w") as fs:
-            fs.write(json.dumps(res, indent=2, default=str))
+        if resource.raw:
+            current_group.append(json.loads(resource.raw))
 
 
 @app.command()
@@ -110,37 +114,32 @@ def load(input_dir: str, attack_paths: bool = True):
     icekube.context_name = kube.context_name
     icekube.kube_version = kube.kube_version
 
-    resources = []
-
-    print("Loading files from disk")
-    for file in tqdm(path.glob("*")):
-        if file.name == "_metadata.json":
-            continue
-        try:
-            # If downloaded via kubectl get -A
-            data = json.load(open(file))["items"]
-        except TypeError:
-            # If downloaded via icekube download
-            data = json.load(open(file))
-
-        for resource in data:
-            resources.append(
-                Resource(
-                    apiVersion=resource["apiVersion"],
-                    kind=resource["kind"],
-                    name=resource["metadata"]["name"],
-                    namespace=resource["metadata"].get("namespace"),
-                    plural=file.name.replace(".json", ""),
-                    raw=json.dumps(resource, default=str),
-                )
-            )
-    print("")
-
     def all_resources(
         preferred_versions_only: bool = True,
         ignore: Optional[List[str]] = None,
     ) -> Iterator[Resource]:
-        yield from resources
+        print("Loading files from disk")
+
+        for file in tqdm(path.glob("*")):
+            if file.name == "_metadata.json":
+                continue
+            try:
+                # If downloaded via kubectl get -A
+                data = json.load(open(file))["items"]
+            except TypeError:
+                # If downloaded via icekube download
+                data = json.load(open(file))
+
+            for resource in data:
+                yield Resource(
+                    apiVersion=resource["apiVersion"],
+                    kind=resource["kind"],
+                    name=resource["metadata"]["name"],
+                    namespace=resource["metadata"].get("namespace"),
+                    plural=file.name.split(".")[0],
+                    raw=json.dumps(resource, default=str),
+                )
+        print("")
 
     kube.all_resources = all_resources
     icekube.all_resources = all_resources
