@@ -39,11 +39,9 @@ def create_indices():
 
 def enumerate_resource_kind(
     ignore: Optional[List[str]] = None,
-) -> List[Resource]:
+):
     if ignore is None:
         ignore = []
-
-    resources: List[Resource] = []
 
     with get_driver().session() as session:
         cluster = Cluster(name=context_name(), version=kube_version())
@@ -62,11 +60,8 @@ def enumerate_resource_kind(
             session.run(cmd, **kwargs)
 
         for resource in all_resources(ignore=ignore):
-            resources.append(resource)
             cmd, kwargs = create(resource)
             session.run(cmd, **kwargs)
-
-    return resources
 
 
 def relationship_generator(
