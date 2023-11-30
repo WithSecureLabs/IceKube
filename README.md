@@ -12,6 +12,10 @@ IceKube is a tool to help find attack paths within a Kubernetes cluster from a l
 * `poetry install --no-dev` (creates venv) *OR* `pip install --user .` (installs the CLI globally)
 * Make sure your `kubectl` current context is set to the target cluster, and has `cluster-admin` privileges
 
+
+* IceKube is also available directly through pip with - `pip install icekube`
+* Neo4j can be spun up directly with docker with - `docker run -d -p 7474:7474 -p 7687:7687 -e NEO4J_AUTH=none -v $PWD/data:/data neo4j:4.4`
+
 ## Permissions Required
 
 This requires elevated privileges within the target cluster to enumerate resources. This typically requires read-only access on all resources within the cluster including secrets. IceKube does not persist any secret data it retrieves from secrets if that is a concern. 
