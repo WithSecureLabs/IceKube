@@ -170,24 +170,27 @@ def all_resources(
             continue
 
         logger.info(f"Fetching {resource_kind.name} resources")
-        resource_class = Resource.get_kind_class(
-            resource_kind.group,
-            resource_kind.kind,
-        )
-        if resource_kind.namespaced:
-            for ns in all_namespaces:
+        try:
+            resource_class = Resource.get_kind_class(
+                resource_kind.group,
+                resource_kind.kind,
+            )
+            if resource_kind.namespaced:
+                for ns in all_namespaces:
+                    yield from resource_class.list(
+                        resource_kind.group,
+                        resource_kind.kind,
+                        resource_kind.name,
+                        ns,
+                    )
+            else:
                 yield from resource_class.list(
                     resource_kind.group,
                     resource_kind.kind,
                     resource_kind.name,
-                    ns,
                 )
-        else:
-            yield from resource_class.list(
-                resource_kind.group,
-                resource_kind.kind,
-                resource_kind.name,
-            )
+        except client.exceptions.ApiException:
+            logger.error(f"Failed to retrieve {resource_kind.name}")
     print("")
 
 
