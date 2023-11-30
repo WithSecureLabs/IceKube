@@ -11,6 +11,10 @@ from pydantic.fields import Field
 
 class ClusterRole(Resource):
     rules: List[PolicyRule] = Field(default_factory=list)
+    supported_api_groups: List[str] = [
+        "rbac.authorization.k8s.io",
+        "authorization.openshift.io",
+    ]
 
     @root_validator(pre=True)
     def inject_rules(cls, values):

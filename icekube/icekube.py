@@ -44,7 +44,7 @@ def enumerate_resource_kind(
         ignore = []
 
     with get_driver().session() as session:
-        cluster = Cluster(name=context_name(), version=kube_version())
+        cluster = Cluster(apiVersion="N/A", name=context_name(), version=kube_version())
         cmd, kwargs = create(cluster)
         session.run(cmd, **kwargs)
 

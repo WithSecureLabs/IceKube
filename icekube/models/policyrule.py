@@ -90,7 +90,7 @@ class PolicyRule(BaseModel):
                         "name": namespace,
                     }
                 else:
-                    query_filter = {"kind": "Cluster"}
+                    query_filter = {"apiVersion": "N/A", "kind": "Cluster"}
                     yield (
                         Relationship.generate_grant("CREATE", resource),
                         generate_query(query_filter),

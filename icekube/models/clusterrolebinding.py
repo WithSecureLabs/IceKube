@@ -9,7 +9,6 @@ from icekube.models.group import Group
 from icekube.models.role import Role
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.models.user import User
-from icekube.neo4j import find_or_mock, get_cluster_object, mock
 from icekube.relationships import Relationship
 from pydantic import root_validator
 from pydantic.fields import Field
@@ -19,6 +18,8 @@ def get_role(
     role_ref: Dict[str, Any],
     namespace: Optional[str] = None,
 ) -> Union[ClusterRole, Role]:
+    from icekube.neo4j import find_or_mock
+
     role_ref["kind"] = role_ref.get("kind", "ClusterRole")
     if role_ref["kind"] == "ClusterRole":
         return find_or_mock(ClusterRole, name=role_ref["name"])
@@ -48,8 +49,7 @@ def get_subjects(
             results.append(Group(name=subject["name"]))
         elif subject["kind"] == "ServiceAccount":
             results.append(
-                mock(
-                    ServiceAccount,
+                ServiceAccount(
                     name=subject["name"],
                     namespace=subject.get("namespace", namespace),
                 ),
@@ -63,6 +63,10 @@ def get_subjects(
 class ClusterRoleBinding(Resource):
     role: Union[ClusterRole, Role]
     subjects: List[Union[ServiceAccount, User, Group]] = Field(default_factory=list)
+    supported_api_groups: List[str] = [
+        "rbac.authorization.k8s.io",
+        "authorization.openshift.io",
+    ]
 
     @root_validator(pre=True)
     def inject_role_and_subjects(cls, values):
@@ -88,11 +92,16 @@ class ClusterRoleBinding(Resource):
             (subject, Relationship.BOUND_TO, self) for subject in self.subjects
         ]
 
+        cluster_query = (
+            "MATCH ({prefix}) WHERE {prefix}.kind =~ ${prefix}_kind ",
+            {"apiVersion": "N/A", "kind": "Cluster"},
+        )
+
         if not initial:
             for role_rule in self.role.rules:
                 if role_rule.contains_csr_approval:
                     relationships.append(
-                        (self, Relationship.HAS_CSR_APPROVAL, get_cluster_object()),
+                        (self, Relationship.HAS_CSR_APPROVAL, cluster_query),
                     )
                 for relationship, resource in role_rule.affected_resource_query():
                     relationships.append((self, relationship, resource))

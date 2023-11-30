@@ -13,6 +13,13 @@ from pydantic import BaseModel, Field, root_validator
 logger = logging.getLogger(__name__)
 
 
+def api_group(api_version: str) -> str:
+    if "/" in api_version:
+        return api_version.split("/")[0]
+    # When the base APIGroup is ""
+    return ""
+
+
 class Resource(BaseModel):
     apiVersion: str = Field(default=...)
     kind: str = Field(default=...)
@@ -20,6 +27,7 @@ class Resource(BaseModel):
     plural: str = Field(default=...)
     namespace: Optional[str] = Field(default=None)
     raw: Optional[str] = Field(default=None)
+    supported_api_groups: List[str] = Field(default_factory=list)
 
     def __new__(cls, **kwargs):
         kind_class = cls.get_kind_class(
@@ -91,19 +99,24 @@ class Resource(BaseModel):
 
     @classmethod
     def get_kind_class(cls, apiVersion: str, kind: str) -> Type[Resource]:
-        subclasses = {x.__name__: x for x in cls.__subclasses__()}
-        try:
-            return subclasses[kind]
-        except KeyError:
-            return cls
+        for subclass in cls.__subclasses__():
+            if subclass.__name__ != kind:
+                continue
+
+            supported = subclass.model_fields["supported_api_groups"].default
+            if not isinstance(supported, list):
+                continue
+
+            if api_group(apiVersion) not in supported:
+                continue
+
+            return subclass
+
+        return cls
 
     @property
     def api_group(self) -> str:
-        if "/" in self.apiVersion:
-            return self.apiVersion.split("/")[0]
-        else:
-            # When the base APIGroup is ""
-            return ""
+        return api_group(self.apiVersion)
 
     @property
     def resource_definition_name(self) -> str:
@@ -206,12 +219,10 @@ class Resource(BaseModel):
         logger.debug(
             f"Generating {'initial' if initial else 'second'} set of relationships",
         )
-        from icekube.neo4j import mock
-
         relationships: List[RELATIONSHIP] = []
 
         if self.namespace is not None:
-            ns = mock(Resource, name=self.namespace, kind="Namespace")
+            ns = Resource(name=self.namespace, kind="Namespace")
             relationships += [
                 (
                     self,

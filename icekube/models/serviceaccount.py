@@ -5,7 +5,6 @@ from typing import List
 
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.secret import Secret
-from icekube.neo4j import mock
 from icekube.relationships import Relationship
 from pydantic import root_validator
 from pydantic.fields import Field
@@ -13,6 +12,7 @@ from pydantic.fields import Field
 
 class ServiceAccount(Resource):
     secrets: List[Secret] = Field(default_factory=list)
+    supported_api_groups: List[str] = [""]
 
     @root_validator(pre=True)
     def inject_secrets(cls, values):
@@ -26,11 +26,10 @@ class ServiceAccount(Resource):
 
         for secret in data.get("secrets", []):
             values["secrets"].append(
-                mock(
-                    Secret,
+                Secret(  # type: ignore
                     name=secret.get("name", ""),
                     namespace=data.get("metadata", {}).get("namespace", ""),
-                ),
+                )
             )
 
         return values
