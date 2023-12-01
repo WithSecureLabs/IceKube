@@ -92,6 +92,9 @@ def download(output_dir: str):
         if resource.raw:
             current_group.append(json.loads(resource.raw))
 
+    with open(path / f"{current_type}.json", "w") as fs:
+        fs.write(json.dumps(current_group, indent=4, default=str))
+
 
 @app.command()
 def load(input_dir: str, attack_paths: bool = True):
