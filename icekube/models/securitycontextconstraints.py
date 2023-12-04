@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 from typing import List, Union
 
+from icekube.relationships import Relationship
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.group import Group
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.models.user import User
-from icekube.neo4j import mock
+from icekube.neo4j_util import mock
 from pydantic import root_validator
 from pydantic.fields import Field
 
@@ -46,6 +47,6 @@ class SecurityContextConstraints(Resource):
     def relationships(self, initial: bool = True) -> List[RELATIONSHIP]:
         relationships = super().relationships()
 
-        relationships += [(x, "GRANTS_USE", self) for x in self.users + self.groups]
+        relationships += [(x, Relationship.GRANTS_USE, self) for x in self.users + self.groups]
 
         return relationships

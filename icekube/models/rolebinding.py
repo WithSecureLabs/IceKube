@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import List, Union
 
+from icekube.relationships import Relationship
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.clusterrole import ClusterRole
 from icekube.models.clusterrolebinding import get_role, get_subjects
@@ -39,8 +40,8 @@ class RoleBinding(Resource):
         initial: bool = True,
     ) -> List[RELATIONSHIP]:
         relationships = super().relationships()
-        relationships += [(self, "GRANTS_PERMISSION", self.role)]
-        relationships += [(subject, "BOUND_TO", self) for subject in self.subjects]
+        relationships += [(self, Relationship.GRANTS_PERMISSION, self.role)]
+        relationships += [(subject, Relationship.BOUND_TO, self) for subject in self.subjects]
 
         if not initial:
             for role_rule in self.role.rules:

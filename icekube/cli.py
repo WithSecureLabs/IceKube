@@ -157,12 +157,14 @@ def load(input_dir: str, attack_paths: bool = True):
 @app.callback()
 def callback(
     neo4j_url: str = typer.Option("bolt://localhost:7687", show_default=True),
+    neo4j_database: str = typer.Option("neo4j", show_default=True),
     neo4j_user: str = typer.Option("neo4j", show_default=True),
     neo4j_password: str = typer.Option("neo4j", show_default=True),
     neo4j_encrypted: bool = typer.Option(False, show_default=True),
     verbose: int = typer.Option(0, "--verbose", "-v", count=True),
 ):
     config["neo4j"]["url"] = neo4j_url
+    config["neo4j"]["database"] = neo4j_database
     config["neo4j"]["username"] = neo4j_user
     config["neo4j"]["password"] = neo4j_password
     config["neo4j"]["encrypted"] = neo4j_encrypted

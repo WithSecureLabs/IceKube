@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar
 
 from icekube.config import config
-from icekube.models import Cluster, Resource
+from icekube.models import BaseResource, Resource
 from neo4j import BoltDriver, GraphDatabase
 from neo4j.io import ServiceUnavailable
 
@@ -29,6 +29,7 @@ def init_connection(
     uri: str = "bolt://localhost:7687",
     auth: Tuple[str, str] = ("neo4j", "neo4j"),
     encrypted: bool = False,
+    database: Optional[str] = "neo4j",
 ) -> BoltDriver:
     neo4j_config = config.get("neo4j", {})
     uri = neo4j_config.get("url", uri)
@@ -37,8 +38,9 @@ def init_connection(
         neo4j_config.get("password", auth[1]),
     )
     encrypted = neo4j_config.get("encrypted", encrypted)
+    database = neo4j_config.get("database", database)
 
-    return GraphDatabase.driver(uri, auth=auth, encrypted=encrypted)
+    return GraphDatabase.driver(uri, auth=auth, encrypted=encrypted, database=database)
 
 
 def create_index(kind: str, namespace: bool) -> None:
@@ -54,7 +56,7 @@ def create_index(kind: str, namespace: bool) -> None:
 
 
 def get(
-    resource: Resource,
+    resource: BaseResource,
     identifier: str = "",
     prefix: str = "",
 ) -> Tuple[str, Dict[str, str]]:
@@ -69,12 +71,15 @@ def get(
         labels.append(f"{key}: ${prefix}{key}")
         kwargs[f"{prefix}{key}"] = value
 
-    cmd = f"MERGE ({identifier}:{resource.kind} {{ {', '.join(labels)} }}) "
+    # For ObjectReferences and SecretReferences, we need to use the core kind to keep track
+    # of the resource rather than rely on using `kind` to reconstruct the object.
+    kind = resource.corekind if hasattr(resource, "corekind") and resource.corekind is not None else resource.kind
+    cmd = f"MERGE ({identifier}:{kind} {{ {', '.join(labels)} }}) "
 
     return cmd, kwargs
 
 
-def create(resource: Resource, prefix: str = "") -> Tuple[str, Dict[str, Any]]:
+def create(resource: BaseResource, prefix: str = "") -> Tuple[str, Dict[str, Any]]:
     cmd, kwargs = get(resource, "x", prefix)
 
     labels: List[str] = []
@@ -92,12 +97,12 @@ def create(resource: Resource, prefix: str = "") -> Tuple[str, Dict[str, Any]]:
 
 
 def find(
-    resource: Optional[Type[Resource]] = None,
+    resource: Optional[Type[BaseResource]] = None,
     raw: bool = False,
     **kwargs: str,
-) -> Generator[Resource, None, None]:
+) -> Generator[BaseResource, None, None]:
     labels = [f"{key}: ${key}" for key in kwargs.keys()]
-    if resource is None or resource is Resource:
+    if resource is None or resource is BaseResource:
         cmd = f"MATCH (x {{ {', '.join(labels)} }}) "
     else:
         cmd = f"MATCH (x:{resource.__name__} {{ {', '.join(labels)} }}) "
@@ -116,39 +121,29 @@ def find(
         for result in results:
             result = result[0]
             props = result._properties
+
+            if len(result.labels) > 0:
+                corekind, *_ = result.labels
+            else:
+                logger.warn(f"Result empty for type: {resource}")
+                continue
+
             logger.debug(
-                f"Loading resource: {props['kind']} "
-                f"{props.get('namespace', '')} {props['name']}",
+                f"Loading resource: {corekind} "
+                f"{props.get('namespace', '')} {props.get('name', '')}",
             )
 
-            if resource is None:
+            if resource is None and "raw" not in props:
+                res = BaseResource(**props)
+            elif "raw" in props:
                 res = Resource(**props)
-            else:
+            elif resource is not None:
                 res = resource(**props)
+            else:
+                continue
+
+            if hasattr(res, "corekind"):
+                res.corekind = corekind
 
             yield res
 
-
-def find_or_mock(resource: Type[T], **kwargs: str) -> T:
-    try:
-        return next(find(resource, **kwargs))  # type: ignore
-    except (StopIteration, IndexError, ServiceUnavailable):
-        return resource(**kwargs)
-
-
-def mock(resource: Type[T], **kwargs: str) -> T:
-    return resource(**kwargs)
-
-
-cluster: Optional[Cluster] = None
-
-
-def get_cluster_object() -> Cluster:
-    global cluster
-
-    if cluster:
-        return cluster
-
-    cluster = find_or_mock(Cluster, kind="Cluster")
-
-    return cluster

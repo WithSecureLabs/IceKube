@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from icekube.relationships import Relationship
 from icekube.models.base import RELATIONSHIP, Resource
 
 
@@ -32,6 +33,6 @@ class Cluster(Resource):
 
         query = "MATCH (src) WHERE NOT src:Cluster "
 
-        relationships += [((query, {}), "WITHIN_CLUSTER", self)]
+        relationships += [((query, {}), Relationship.WITHIN_CLUSTER, self)]
 
         return relationships

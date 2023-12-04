@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, cast
 
+from icekube.relationships import Relationship
 from icekube.models.base import RELATIONSHIP, Resource
-from icekube.neo4j import mock
+from icekube.neo4j_util import mock
 from pydantic import root_validator
 
 
@@ -52,7 +53,7 @@ class Secret(Resource):
                 relationships.append(
                     (
                         self,
-                        "AUTHENTICATION_TOKEN_FOR",
+                        Relationship.AUTHENTICATION_TOKEN_FOR,
                         account,
                     ),
                 )

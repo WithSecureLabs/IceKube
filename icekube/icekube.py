@@ -11,7 +11,7 @@ from icekube.kube import (
     kube_version,
 )
 from icekube.models import Cluster, Signer
-from icekube.models.base import Resource
+from icekube.models.base import BaseResource, Resource
 from icekube.neo4j import create, find, get, get_driver
 from neo4j import BoltDriver
 from tqdm import tqdm
@@ -63,23 +63,51 @@ def enumerate_resource_kind(
             cmd, kwargs = create(resource)
             session.run(cmd, **kwargs)
 
+            current = resource
+            next_recurse = []
+
+            if hasattr(current, "referenced_objects"):
+                next_recurse.extend(current.referenced_objects)
+
+            # Recurses into nested objects and calls out to
+            # neo4j to create the object if it doesn't exist
+            while len(next_recurse) > 0:
+                next_objs = []
+                for obj in next_recurse:
+                    if obj is None:
+                        # Will happen when a resource that can contain
+                        # a nested object didn't have it specified
+                        continue
+
+                    if hasattr(obj, "referenced_objects"):
+                        next_objs.extend(obj.referenced_objects)
+
+                    cmd, kwargs = create(obj)
+                    session.run(cmd, **kwargs)
+
+                next_recurse = next_objs
+
+
 
 def relationship_generator(
     driver: BoltDriver,
     initial: bool,
-    resource: Resource,
+    resource: BaseResource,
 ):
     with driver.session() as session:
         logger.info(f"Generating relationships for {resource}")
+
         for source, relationship, target in resource.relationships(initial):
-            if isinstance(source, Resource):
+            if isinstance(source, (BaseResource, Resource)):
                 src_cmd, src_kwargs = get(source, prefix="src")
             else:
                 src_cmd = source[0].format(prefix="src")
                 src_kwargs = {f"src_{key}": value for key, value in source[1].items()}
 
-            if isinstance(target, Resource):
+            if isinstance(target, (BaseResource, Resource)):
                 dst_cmd, dst_kwargs = get(target, prefix="dst")
+            elif isinstance(target, str):
+                dst_cmd, dst_kwargs = get(resource, prefix="dst")
             else:
                 dst_cmd = target[0].format(prefix="dst")
                 dst_kwargs = {f"dst_{key}": value for key, value in target[1].items()}
@@ -95,38 +123,26 @@ def relationship_generator(
             session.run(cmd, kwargs)
 
 
-def generate_relationships(threaded: bool = False) -> None:
+def generate_relationships(threaded: bool = False, pass_total: int=2) -> None:
     logger.info("Generating relationships")
-    logger.info("Fetching resources from neo4j")
     driver = get_driver()
-    resources = find()
-    logger.info("Fetched resources from neo4j")
     generator = partial(relationship_generator, driver, True)
 
-    if threaded:
-        with ThreadPoolExecutor() as exc:
-            exc.map(generator, resources)
-    else:
-        print("First pass for relationships")
-        for resource in tqdm(resources):
-            generator(resource)
-        print("")
+    pass_num = 0
+    while pass_num < pass_total:
+        pass_num += 1
+        logger.info("Fetching resources from neo4j")
+        resources = find()
+        logger.info("Fetched resources from neo4j")
 
-    # Do a second loop across relationships to handle objects created as part
-    # of other relationships
-
-    resources = find()
-    generator = partial(relationship_generator, driver, False)
-
-    if threaded:
-        with ThreadPoolExecutor() as exc:
-            exc.map(generator, resources)
-    else:
-        print("Second pass for relationships")
-        for resource in tqdm(resources):
-            generator(resource)
-        print("")
-
+        if threaded:
+            with ThreadPoolExecutor() as exc:
+                exc.map(generator, resources)
+        else:
+            print(f"Generating relationships ({pass_num}/{pass_total})")
+            for resource in tqdm(resources):
+                generator(resource)
+            print("")
 
 def remove_attack_paths() -> None:
     with get_driver().session() as session:

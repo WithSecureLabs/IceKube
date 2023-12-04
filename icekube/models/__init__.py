@@ -1,12 +1,13 @@
 from typing import List, Type
 
 from icekube.models.api_resource import APIResource
-from icekube.models.base import Resource
+from icekube.models.base import BaseResource, Resource
 from icekube.models.cluster import Cluster
 from icekube.models.clusterrole import ClusterRole
 from icekube.models.clusterrolebinding import ClusterRoleBinding
 from icekube.models.group import Group
 from icekube.models.namespace import Namespace
+from icekube.models.storage import PersistentVolume
 from icekube.models.pod import Pod
 from icekube.models.role import Role
 from icekube.models.rolebinding import RoleBinding
@@ -28,6 +29,7 @@ enumerate_resource_kinds: List[Type[Resource]] = [
     Secret,
     SecurityContextConstraints,
     ServiceAccount,
+    PersistentVolume
 ]
 
 
@@ -41,6 +43,7 @@ __all__ = [
     "ClusterRoleBinding",
     "Group",
     "Namespace",
+    "PersistentVolume",
     "Pod",
     "Role",
     "RoleBinding",
