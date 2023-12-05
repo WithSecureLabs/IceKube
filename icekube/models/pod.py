@@ -74,20 +74,13 @@ class Pod(Resource):
         data = json.loads(load(values, "raw", "{}"))
         sa = data.get("spec", {}).get("serviceAccountName")
         if sa:
-<<<<<<< HEAD
-            values["service_account"] = ServiceAccount(
-                name=sa,
-                namespace=values.get("namespace"),
-=======
             values = save(
                 values,
                 "service_account",
-                mock(
-                    ServiceAccount,
+                ServiceAccount(
                     name=sa,
                     namespace=values.get("namespace"),
                 ),
->>>>>>> e353116 (poetry update - requires pydantic bug fixes)
             )
         else:
             values = save(values, "service_account", None)
@@ -99,11 +92,7 @@ class Pod(Resource):
         data = json.loads(load(values, "raw", "{}"))
         node = data.get("spec", {}).get("nodeName")
         if node:
-<<<<<<< HEAD
-            values["node"] = Node(name=node)
-=======
-            values = save(values, "node", mock(Node, name=node))
->>>>>>> e353116 (poetry update - requires pydantic bug fixes)
+            values = save(values, "node", Node(name=node))
         else:
             values = save(values, "node", None)
 
