@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import traceback
+from json import JSONEncoder
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from icekube.relationships import Relationship
@@ -13,20 +15,120 @@ from pydantic import BaseModel, Field, root_validator
 logger = logging.getLogger(__name__)
 
 
-class Resource(BaseModel):
+class ResourceDecoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, BaseModel):
+            return obj.model_dump()
+
+        if not hasattr(obj, "__dict__"):
+            return obj
+
+        return obj.__dict__
+
+
+class BaseResource(BaseModel):
     apiVersion: str = Field(default=...)
     kind: str = Field(default=...)
-    name: str = Field(default=...)
-    plural: str = Field(default=...)
-    namespace: Optional[str] = Field(default=None)
-    raw: Optional[str] = Field(default=None)
+    objHash: Optional[str] = Field(default=None)
 
     def __new__(cls, **kwargs):
         kind_class = cls.get_kind_class(
             kwargs.get("apiVersion", ""),
-            kwargs.get("kind", cls.__name__),
+            kwargs.get("corekind", kwargs.get("kind", cls.__name__)),
         )
-        return super(Resource, kind_class).__new__(kind_class)
+        return super(BaseResource, kind_class).__new__(kind_class)
+
+    def __repr__(self) -> str:
+        if self.objHash is not None:
+            return (
+                f'{self.kind}(apiVersion="{self.apiVersion}", objHash="{self.objHash}")'
+            )
+        return f'{self.kind}(apiVersion="{self.apiVersion}")'
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+    @root_validator(pre=True)
+    def inject_object_hash(cls, values):
+        if isinstance(values, str):
+            # This could be happening due to some subclasses
+            # redefining the type of the field as a string/hash
+            # and when deserializing, we think that the value stored
+            # in neo4j is a struct, but actually is a hash value.
+            from icekube.neo4j import find
+
+            found = list(find(cls, raw=False, **{"objHash": values}))
+            return found[0].model_dump() if len(found) > 0 else values
+
+        if "objHash" not in values or values["objHash"] is None:
+            jsonObj = json.dumps(values, cls=ResourceDecoder)
+            jsonHash = hashlib.sha256(jsonObj.encode("utf-8")).hexdigest()
+            values["objHash"] = jsonHash
+
+        return values
+
+    @classmethod
+    def get_kind_class(cls, apiVersion: str, kind: str) -> Type[Resource]:
+        subclasses = {x.__name__: x for x in cls.__subclasses__()}
+        try:
+            return subclasses[kind]
+        except KeyError:
+            return cls
+
+    @property
+    def api_group(self) -> str:
+        if "/" in self.apiVersion:
+            return self.apiVersion.split("/")[0]
+        else:
+            # When the base APIGroup is ""
+            return ""
+
+    @property
+    def unique_identifiers(self) -> Dict[str, str]:
+        return {
+            "apiGroup": self.api_group,
+            "apiVersion": self.apiVersion,
+            "kind": self.kind,
+            "objHash": self.objHash,
+        }
+
+    @property
+    def db_labels(self):
+        labels = {
+            k: (
+                v["objHash"]
+                if v is not None and "objHash" in v
+                else [
+                    i["objHash"] if i is not None and "objHash" in i else i for i in v
+                ]
+                if isinstance(v, list)
+                else v
+            )
+            for k, v in self.model_dump().items()
+        }
+
+        if self.kind is None:
+            labels["kind"] = self.__class__.__name__
+
+        return labels
+
+    @property
+    def referenced_objects(self):
+        return []
+
+    def relationships(self, initial: bool = True) -> List[RELATIONSHIP]:
+        return [
+            (self, Relationship.DEFINES, i)
+            for i in self.referenced_objects
+            if i is not None
+        ]
+
+
+class Resource(BaseResource):
+    name: str = Field(default=...)
+    plural: str = Field(default=...)
+    namespace: Optional[str] = Field(default=None)
+    raw: Optional[str] = Field(default=None)
 
     def __repr__(self) -> str:
         if self.namespace:
@@ -89,22 +191,6 @@ class Resource(BaseModel):
 
         return values
 
-    @classmethod
-    def get_kind_class(cls, apiVersion: str, kind: str) -> Type[Resource]:
-        subclasses = {x.__name__: x for x in cls.__subclasses__()}
-        try:
-            return subclasses[kind]
-        except KeyError:
-            return cls
-
-    @property
-    def api_group(self) -> str:
-        if "/" in self.apiVersion:
-            return self.apiVersion.split("/")[0]
-        else:
-            # When the base APIGroup is ""
-            return ""
-
     @property
     def resource_definition_name(self) -> str:
         if self.api_group:
@@ -119,6 +205,7 @@ class Resource(BaseModel):
             "apiVersion": self.apiVersion,
             "kind": self.kind,
             "name": self.name,
+            "objHash": self.objHash,
         }
         if self.namespace:
             ident["namespace"] = self.namespace

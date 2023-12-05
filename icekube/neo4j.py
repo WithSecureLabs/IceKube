@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar
 
 from icekube.config import config
-from icekube.models import Cluster, Resource
+from icekube.models import Cluster, BaseResource, Resource
 from neo4j import BoltDriver, GraphDatabase
 from neo4j.io import ServiceUnavailable
 
@@ -23,6 +23,15 @@ def get_driver() -> BoltDriver:
         driver = init_connection()
 
     return driver
+
+
+def get_resource_kind(resource: BaseResource) -> str:
+    kind = resource.__class__.__name__
+    if type(resource) == Resource or type(resource) == BaseResource:
+        # If directly one of the base classes, use the kind from the API
+        kind = resource.kind
+
+    return kind
 
 
 def init_connection(
@@ -54,7 +63,7 @@ def create_index(kind: str, namespace: bool) -> None:
 
 
 def get(
-    resource: Resource,
+    resource: BaseResource,
     identifier: str = "",
     prefix: str = "",
 ) -> Tuple[str, Dict[str, str]]:
@@ -69,7 +78,8 @@ def get(
         labels.append(f"{key}: ${prefix}{key}")
         kwargs[f"{prefix}{key}"] = value
 
-    cmd = f"MERGE ({identifier}:{resource.kind} {{ {', '.join(labels)} }}) "
+    kind = get_resource_kind(resource)
+    cmd = f"MERGE ({identifier}:{kind} {{ {', '.join(labels)} }}) "
 
     return cmd, kwargs
 
@@ -92,15 +102,16 @@ def create(resource: Resource, prefix: str = "") -> Tuple[str, Dict[str, Any]]:
 
 
 def find(
-    resource: Optional[Type[Resource]] = None,
+    resource: Optional[Type[BaseResource]] = None,
     raw: bool = False,
     **kwargs: str,
 ) -> Generator[Resource, None, None]:
     labels = [f"{key}: ${key}" for key in kwargs.keys()]
-    if resource is None or resource is Resource:
+    if resource is None:
         cmd = f"MATCH (x {{ {', '.join(labels)} }}) "
     else:
-        cmd = f"MATCH (x:{resource.__name__} {{ {', '.join(labels)} }}) "
+        kind = get_resource_kind(resource)
+        cmd = f"MATCH (x:{kind} {{ {', '.join(labels)} }}) "
 
     if raw:
         cmd += "WHERE EXISTS (x.raw) "
@@ -116,15 +127,29 @@ def find(
         for result in results:
             result = result[0]
             props = result._properties
+
+            if len(result.labels) > 0:
+                # Get the kind from the Node labels, since some
+                # K8s types that we will be creating define
+                # their own apiVersion/kind in the spec.
+                kind, *_ = result.labels
+            else:
+                logger.warn(f"Result empty for type: {resource}")
+                continue
+
             logger.debug(
-                f"Loading resource: {props['kind']} "
-                f"{props.get('namespace', '')} {props['name']}",
+                f"Loading resource: {kind} "
+                f"{props.get('namespace', '')} {props.get('name', '')}",
             )
 
-            if resource is None:
+            if resource is None and "raw" not in props:
+                res = BaseResource(**props)
+            elif "raw" in props:
                 res = Resource(**props)
-            else:
+            elif resource is not None:
                 res = resource(**props)
+            else:
+                continue
 
             yield res
 
