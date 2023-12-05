@@ -68,7 +68,6 @@ class Resource(BaseModel):
                     break
             else:
                 # Nothing found, setting them to blank
-
                 def get_value(field):
                     if isinstance(values, dict) and field in values:
                         return values[field]
@@ -88,24 +87,13 @@ class Resource(BaseModel):
 
                 return values
 
-            if isinstance(values, dict):
-                if "apiVersion" not in values:
-                    values["apiVersion"] = api_resource.group
-
-                if "kind" not in values:
-                    values["kind"] = api_resource.kind
-
-                if "plural" not in values:
-                    values["plural"] = api_resource.name
-            else:
-                if not values.apiVersion:
-                    values.apiVersion = api_resource.group
-
-                if not values.kind:
-                    values.kind = api_resource.kind
-
-                if not values.plural:
-                    values.plural = api_resource.name
+            for attr, val in [
+                ("apiVersion", api_resource.group),
+                ("kind", api_resource.kind),
+                ("plural", api_resource.name),
+            ]:
+                if load(values, attr) is None:
+                    values = save(values, attr, val)
 
         return values
 
