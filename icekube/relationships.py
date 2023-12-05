@@ -2,15 +2,15 @@ from typing import ClassVar, Optional
 
 
 class Relationship:
-    """
-    Consolidates the various relationship types into a single class for better
-    tracking of where we assign each relationship across the codebase.
+    """Consolidates the various relationship types into a single class.
+
+    This allows for better tracking of where we assign each relationship
+    across the codebase.
 
     Relationships in the order (ObjectOne, RELATIONSHIP, ObjectTwo) are
     in this direction in neo4j: (ObjectOne)-[:RELATIONSHIP]->(ObjectTwo)
     """
 
-    USES_ACCOUNT: ClassVar[str] = "USES_ACCOUNT"
     HOSTS_POD: ClassVar[str] = "HOSTS_POD"
 
     AUTHENTICATION_TOKEN_FOR: ClassVar[str] = "AUTHENTICATION_TOKEN_FOR"
@@ -87,7 +87,8 @@ class Relationship:
     REFERENCES: ClassVar[str] = "REFERENCES"
     # Directly consumes a resource (e.g. PersistentVolumeClaim -> PersistentVolume)
     CONSUMES: ClassVar[str] = "CONSUMES"
-    # Indirectly consumes a resource, without an exclusive relationship to the refering node (e.g. PersistentVolume -> StorageClass)
+    # Indirectly consumes a resource, without an exclusive relationship to the refering
+    # node (e.g. PersistentVolume -> StorageClass)
     USES: ClassVar[str] = "USES"
     # Defines ownership of a resource (e.g. Deployment-[:OWNS]->ReplicaSet)
     OWNS: ClassVar[str] = "OWNS"

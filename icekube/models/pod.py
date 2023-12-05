@@ -5,12 +5,12 @@ from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
-from icekube.relationships import Relationship
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.node import Node
 from icekube.models.secret import Secret
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.neo4j import mock
+from icekube.relationships import Relationship
 from pydantic import root_validator
 
 CAPABILITIES = [

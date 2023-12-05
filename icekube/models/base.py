@@ -4,8 +4,8 @@ import json
 import logging
 import traceback
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
-from icekube.relationships import Relationship
 
+from icekube.relationships import Relationship
 from icekube.utils import to_camel_case
 from kubernetes import client
 from pydantic import BaseModel, Field, root_validator

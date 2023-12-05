@@ -1,6 +1,7 @@
 # flake8: noqa
 
 from typing import List
+
 from icekube.relationships import Relationship
 
 WORKLOAD_TYPES = [
