@@ -1,7 +1,6 @@
 from typing import List, Type
 
 from icekube.models.api_resource import APIResource
-
 from icekube.models.base import BaseResource, Resource  # noqa: F401
 from icekube.models.cluster import Cluster
 from icekube.models.clusterrole import ClusterRole
