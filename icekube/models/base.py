@@ -190,7 +190,7 @@ class Resource(BaseResource):
                 values["plural"] = api_resource.name
 
         return values
-    
+
     @classmethod
     def get_kind_class(cls, apiVersion: str, kind: str) -> Type[Resource]:
         subclasses = {x.__name__: x for x in cls.__subclasses__()}
