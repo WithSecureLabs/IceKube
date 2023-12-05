@@ -6,9 +6,10 @@ class Relationship:
     Consolidates the various relationship types into a single class for better
     tracking of where we assign each relationship across the codebase.
 
-    Relationships in the order (ObjectOne, RELATIONSHIP, ObjectTwo) are 
+    Relationships in the order (ObjectOne, RELATIONSHIP, ObjectTwo) are
     in this direction in neo4j: (ObjectOne)-[:RELATIONSHIP]->(ObjectTwo)
     """
+
     USES_ACCOUNT: ClassVar[str] = "USES_ACCOUNT"
     HOSTS_POD: ClassVar[str] = "HOSTS_POD"
 
@@ -18,18 +19,24 @@ class Relationship:
     WITHIN_NAMESPACE: ClassVar[str] = "WITHIN_NAMESPACE"
 
     GRANTS_PODS_CREATE: ClassVar[str] = "GRANTS_PODS_CREATE"
-    GRANTS_REPLICATIONCONTROLLERS_CREATE: ClassVar[str] = "GRANTS_REPLICATIONCONTROLLERS_CREATE"
+    GRANTS_REPLICATIONCONTROLLERS_CREATE: ClassVar[
+        str
+    ] = "GRANTS_REPLICATIONCONTROLLERS_CREATE"
     GRANTS_DAEMONSETS_CREATE: ClassVar[str] = "GRANTS_DAEMONSETS_CREATE"
     GRANTS_DEPLOYMENTS_CREATE: ClassVar[str] = "GRANTS_DEPLOYMENTS_CREATE"
     GRANTS_REPLICASETS_CREATE: ClassVar[str] = "GRANTS_REPLICASETS_CREATE"
     GRANTS_STATEFULSETS_CREATE: ClassVar[str] = "GRANTS_STATEFULSETS_CREATE"
     GRANTS_CRONJOBS_CREATE: ClassVar[str] = "GRANTS_CRONJOBS_CREATE"
     GRANTS_JOBS_CREATE: ClassVar[str] = "GRANTS_JOBS_CREATE"
-    
-    GRANTS_AZUREPODIDENTITYEXCEPTIONS_CREATE: ClassVar[str] = "GRANTS_AZUREPODIDENTITYEXCEPTIONS_CREATE"
-    GRANTS_CERTIFICATESIGNINGREQUESTS_CREATE: ClassVar[str] = "GRANTS_CERTIFICATESIGNINGREQUESTS_CREATE"
+
+    GRANTS_AZUREPODIDENTITYEXCEPTIONS_CREATE: ClassVar[
+        str
+    ] = "GRANTS_AZUREPODIDENTITYEXCEPTIONS_CREATE"
+    GRANTS_CERTIFICATESIGNINGREQUESTS_CREATE: ClassVar[
+        str
+    ] = "GRANTS_CERTIFICATESIGNINGREQUESTS_CREATE"
     GRANTS_PROXY_CREATE: ClassVar[str] = "GRANTS_PROXY_CREATE"
-    
+
     GRANTS_GET: ClassVar[str] = "GRANTS_GET"
     GRANTS_LIST: ClassVar[str] = "GRANTS_LIST"
     GRANTS_UPDATE: ClassVar[str] = "GRANTS_UPDATE"
@@ -37,7 +44,7 @@ class Relationship:
     GRANTS_PATCH: ClassVar[str] = "GRANTS_PATCH"
     GRANTS_APPROVE: ClassVar[str] = "GRANTS_APPROVE"
     GRANTS_PERMISSION: ClassVar[str] = "GRANTS_PERMISSION"
-    
+
     GRANTS_ESCALATE: ClassVar[str] = "GRANTS_ESCALATE"
     GRANTS_IMPERSONATE: ClassVar[str] = "GRANTS_IMPERSONATE"
     GRANTS_TOKEN_CREATE: ClassVar[str] = "GRANTS_TOKEN_CREATE"

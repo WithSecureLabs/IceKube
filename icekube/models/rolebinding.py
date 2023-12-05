@@ -41,7 +41,9 @@ class RoleBinding(Resource):
     ) -> List[RELATIONSHIP]:
         relationships = super().relationships()
         relationships += [(self, Relationship.GRANTS_PERMISSION, self.role)]
-        relationships += [(subject, Relationship.BOUND_TO, self) for subject in self.subjects]
+        relationships += [
+            (subject, Relationship.BOUND_TO, self) for subject in self.subjects
+        ]
 
         if not initial:
             for role_rule in self.role.rules:

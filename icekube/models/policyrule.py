@@ -92,12 +92,12 @@ class PolicyRule(BaseModel):
                 else:
                     query_filter = {"kind": "Cluster"}
                     yield (
-                        Relationship.generate_grant(resource, "CREATE"),
+                        Relationship.generate_grant("CREATE", resource),
                         generate_query(query_filter),
                     )
                     query_filter = {"kind": "Namespace"}
                 yield (
-                    Relationship.generate_grant(resource, "CREATE"),
+                    Relationship.generate_grant("CREATE", resource),
                     generate_query(query_filter),
                 )
                 valid_verbs.remove("create")
@@ -105,7 +105,9 @@ class PolicyRule(BaseModel):
             if not valid_verbs:
                 continue
 
-            tags = [Relationship.generate_grant(verb, sub_resource) for verb in valid_verbs]
+            tags = [
+                Relationship.generate_grant(verb, sub_resource) for verb in valid_verbs
+            ]
 
             if not self.resourceNames:
                 yield (tags, generate_query(find_filter))

@@ -40,5 +40,7 @@ class ServiceAccount(Resource):
         initial: bool = True,
     ) -> List[RELATIONSHIP]:
         relationships = super().relationships()
-        relationships += [(x, Relationship.AUTHENTICATION_TOKEN_FOR, self) for x in self.secrets]
+        relationships += [
+            (x, Relationship.AUTHENTICATION_TOKEN_FOR, self) for x in self.secrets
+        ]
         return relationships
