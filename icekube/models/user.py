@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import List
 
 from icekube.models.base import Resource
 
 
 class User(Resource):
     plural: str = "users"
-
-    @property
-    def unique_identifiers(self) -> Dict[str, str]:
-        return {**super().unique_identifiers, "plural": self.plural}
+    supported_api_groups: List[str] = ["", "user.openshift.io"]

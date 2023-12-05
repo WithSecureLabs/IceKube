@@ -9,7 +9,6 @@ from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.node import Node
 from icekube.models.secret import Secret
 from icekube.models.serviceaccount import ServiceAccount
-from icekube.neo4j import mock
 from icekube.relationships import Relationship
 from pydantic import root_validator
 
@@ -67,14 +66,14 @@ class Pod(Resource):
     privileged: bool
     hostPID: bool
     hostNetwork: bool
+    supported_api_groups: List[str] = [""]
 
     @root_validator(pre=True)
     def inject_service_account(cls, values):
         data = json.loads(values.get("raw", "{}"))
         sa = data.get("spec", {}).get("serviceAccountName")
         if sa:
-            values["service_account"] = mock(
-                ServiceAccount,
+            values["service_account"] = ServiceAccount(
                 name=sa,
                 namespace=values.get("namespace"),
             )
@@ -87,7 +86,7 @@ class Pod(Resource):
         data = json.loads(values.get("raw", "{}"))
         node = data.get("spec", {}).get("nodeName")
         if node:
-            values["node"] = mock(Node, name=node)
+            values["node"] = Node(name=node)
         else:
             values["node"] = None
 
@@ -258,7 +257,10 @@ class Pod(Resource):
                 (
                     self,
                     Relationship.MOUNTS_SECRET,
-                    mock(Secret, namespace=cast(str, self.namespace), name=secret),
+                    Secret(  # type: ignore
+                        namespace=cast(str, self.namespace),
+                        name=secret,
+                    ),
                 ),
             ]
 

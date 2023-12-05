@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar
 
 from icekube.config import config
-from icekube.models import Cluster, Resource
+from icekube.models import Resource
 from neo4j import BoltDriver, GraphDatabase
 from neo4j.io import ServiceUnavailable
 
@@ -134,21 +134,3 @@ def find_or_mock(resource: Type[T], **kwargs: str) -> T:
         return next(find(resource, **kwargs))  # type: ignore
     except (StopIteration, IndexError, ServiceUnavailable):
         return resource(**kwargs)
-
-
-def mock(resource: Type[T], **kwargs: str) -> T:
-    return resource(**kwargs)
-
-
-cluster: Optional[Cluster] = None
-
-
-def get_cluster_object() -> Cluster:
-    global cluster
-
-    if cluster:
-        return cluster
-
-    cluster = find_or_mock(Cluster, kind="Cluster")
-
-    return cluster

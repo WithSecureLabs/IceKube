@@ -4,7 +4,6 @@ import json
 from typing import Any, Dict, List, cast
 
 from icekube.models.base import RELATIONSHIP, Resource
-from icekube.neo4j import mock
 from icekube.relationships import Relationship
 from pydantic import root_validator
 
@@ -12,6 +11,7 @@ from pydantic import root_validator
 class Secret(Resource):
     secret_type: str
     annotations: Dict[str, Any]
+    supported_api_groups: List[str] = [""]
 
     @root_validator(pre=True)
     def remove_secret_data(cls, values):
@@ -45,8 +45,7 @@ class Secret(Resource):
 
             sa = self.annotations.get("kubernetes.io/service-account.name")
             if sa:
-                account = mock(
-                    ServiceAccount,
+                account = ServiceAccount(
                     name=sa,
                     namespace=cast(str, self.namespace),
                 )

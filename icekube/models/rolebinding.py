@@ -18,6 +18,10 @@ from pydantic.fields import Field
 class RoleBinding(Resource):
     role: Union[ClusterRole, Role]
     subjects: List[Union[ServiceAccount, User, Group]] = Field(default_factory=list)
+    supported_api_groups: List[str] = [
+        "rbac.authorization.k8s.io",
+        "authorization.openshift.io",
+    ]
 
     @root_validator(pre=True)
     def inject_role_and_subjects(cls, values):
