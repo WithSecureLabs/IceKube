@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from icekube.config import config
 from icekube.models import BaseResource, Cluster, Resource
