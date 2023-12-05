@@ -57,7 +57,7 @@ class BaseResource(BaseModel):
             # in neo4j is a struct, but actually is a hash value.
             from icekube.neo4j import find
 
-            found = list(find(cls, raw=False, **{"objHash": values}))
+            found = list(find(type(cls), raw=False, **{"objHash": values}))
             return found[0].model_dump() if len(found) > 0 else values
 
         if "objHash" not in values or values["objHash"] is None:
@@ -68,7 +68,7 @@ class BaseResource(BaseModel):
         return values
 
     @classmethod
-    def get_kind_class(cls, apiVersion: str, kind: str) -> Type[Resource]:
+    def get_kind_class(cls, apiVersion: str, kind: str) -> Type[BaseResource]:
         subclasses = {x.__name__: x for x in cls.__subclasses__()}
         try:
             return subclasses[kind]
@@ -89,7 +89,7 @@ class BaseResource(BaseModel):
             "apiGroup": self.api_group,
             "apiVersion": self.apiVersion,
             "kind": self.kind,
-            "objHash": self.objHash,
+            "objHash": self.objHash if self.objHash is not None else "",
         }
 
     @property
@@ -113,7 +113,7 @@ class BaseResource(BaseModel):
         return labels
 
     @property
-    def referenced_objects(self):
+    def referenced_objects(self) -> List[Optional[BaseResource]]:
         return []
 
     def relationships(self, initial: bool = True) -> List[RELATIONSHIP]:
@@ -190,6 +190,14 @@ class Resource(BaseResource):
                 values["plural"] = api_resource.name
 
         return values
+    
+    @classmethod
+    def get_kind_class(cls, apiVersion: str, kind: str) -> Type[Resource]:
+        subclasses = {x.__name__: x for x in cls.__subclasses__()}
+        try:
+            return subclasses[kind]
+        except KeyError:
+            return cls
 
     @property
     def resource_definition_name(self) -> str:
@@ -205,10 +213,11 @@ class Resource(BaseResource):
             "apiVersion": self.apiVersion,
             "kind": self.kind,
             "name": self.name,
-            "objHash": self.objHash,
+            "objHash": self.objHash if self.objHash is not None else "",
         }
         if self.namespace:
             ident["namespace"] = self.namespace
+
         return ident
 
     @property
@@ -313,7 +322,7 @@ class Resource(BaseResource):
 QUERY_RESOURCE = Tuple[str, Dict[str, str]]
 
 RELATIONSHIP = Tuple[
-    Union[Resource, QUERY_RESOURCE],
+    Union[BaseResource, QUERY_RESOURCE],
     Union[str, List[str]],
-    Union[Resource, QUERY_RESOURCE],
+    Union[BaseResource, QUERY_RESOURCE],
 ]

@@ -175,6 +175,10 @@ def all_resources(
                 resource_kind.group,
                 resource_kind.kind,
             )
+
+            if not issubclass(resource_class, Resource):
+                continue
+
             if resource_kind.namespaced:
                 for ns in all_namespaces:
                     yield from resource_class.list(

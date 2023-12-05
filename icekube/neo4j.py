@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar, Union
 
 from icekube.config import config
 from icekube.models import BaseResource, Cluster, Resource
@@ -25,8 +25,8 @@ def get_driver() -> BoltDriver:
     return driver
 
 
-def get_resource_kind(resource: BaseResource) -> str:
-    kind = resource.__class__.__name__
+def get_resource_kind(resource: Union[BaseResource, Type[BaseResource]]) -> str:
+    kind = resource.__class__.__name__ if type(resource) != type else resource.__name__
     if type(resource) == Resource or type(resource) == BaseResource:
         # If directly one of the base classes, use the kind from the API
         kind = resource.kind
@@ -84,7 +84,7 @@ def get(
     return cmd, kwargs
 
 
-def create(resource: Resource, prefix: str = "") -> Tuple[str, Dict[str, Any]]:
+def create(resource: BaseResource, prefix: str = "") -> Tuple[str, Dict[str, Any]]:
     cmd, kwargs = get(resource, "x", prefix)
 
     labels: List[str] = []
@@ -105,7 +105,7 @@ def find(
     resource: Optional[Type[BaseResource]] = None,
     raw: bool = False,
     **kwargs: str,
-) -> Generator[Resource, None, None]:
+) -> Generator[BaseResource, None, None]:
     labels = [f"{key}: ${key}" for key in kwargs.keys()]
     if resource is None:
         cmd = f"MATCH (x {{ {', '.join(labels)} }}) "
