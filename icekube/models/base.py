@@ -4,6 +4,7 @@ import json
 import logging
 import traceback
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from icekube.relationships import Relationship
 
 from icekube.utils import to_camel_case
 from kubernetes import client
@@ -214,7 +215,7 @@ class Resource(BaseModel):
             relationships += [
                 (
                     self,
-                    "WITHIN_NAMESPACE",
+                    Relationship.WITHIN_NAMESPACE,
                     ns,
                 ),
             ]

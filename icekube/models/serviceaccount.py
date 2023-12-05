@@ -6,6 +6,7 @@ from typing import List
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.secret import Secret
 from icekube.neo4j import mock
+from icekube.relationships import Relationship
 from pydantic import root_validator
 from pydantic.fields import Field
 
@@ -39,5 +40,5 @@ class ServiceAccount(Resource):
         initial: bool = True,
     ) -> List[RELATIONSHIP]:
         relationships = super().relationships()
-        relationships += [(x, "AUTHENTICATION_TOKEN_FOR", self) for x in self.secrets]
+        relationships += [(x, Relationship.AUTHENTICATION_TOKEN_FOR, self) for x in self.secrets]
         return relationships

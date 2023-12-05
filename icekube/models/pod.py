@@ -5,6 +5,7 @@ from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
+from icekube.relationships import Relationship
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.node import Node
 from icekube.models.secret import Secret
@@ -249,14 +250,14 @@ class Pod(Resource):
         relationships = super().relationships()
 
         if self.service_account:
-            relationships += [(self, "USES_ACCOUNT", self.service_account)]
+            relationships += [(self, Relationship.USES_ACCOUNT, self.service_account)]
         if self.node:
-            relationships += [(self.node, "HOSTS_POD", self)]
+            relationships += [(self.node, Relationship.HOSTS_POD, self)]
         for secret in self.mounted_secrets:
             relationships += [
                 (
                     self,
-                    "MOUNTS_SECRET",
+                    Relationship.MOUNTS_SECRET,
                     mock(Secret, namespace=cast(str, self.namespace), name=secret),
                 ),
             ]

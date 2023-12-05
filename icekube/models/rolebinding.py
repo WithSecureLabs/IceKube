@@ -10,6 +10,7 @@ from icekube.models.group import Group
 from icekube.models.role import Role
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.models.user import User
+from icekube.relationships import Relationship
 from pydantic import root_validator
 from pydantic.fields import Field
 
@@ -39,8 +40,8 @@ class RoleBinding(Resource):
         initial: bool = True,
     ) -> List[RELATIONSHIP]:
         relationships = super().relationships()
-        relationships += [(self, "GRANTS_PERMISSION", self.role)]
-        relationships += [(subject, "BOUND_TO", self) for subject in self.subjects]
+        relationships += [(self, Relationship.GRANTS_PERMISSION, self.role)]
+        relationships += [(subject, Relationship.BOUND_TO, self) for subject in self.subjects]
 
         if not initial:
             for role_rule in self.role.rules:
