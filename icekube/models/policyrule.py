@@ -3,6 +3,7 @@ from fnmatch import filter as fnfilter
 from fnmatch import fnmatch
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
+from icekube.relationships import Relationship
 from pydantic import BaseModel
 from pydantic.fields import Field
 
@@ -91,12 +92,12 @@ class PolicyRule(BaseModel):
                 else:
                     query_filter = {"kind": "Cluster"}
                     yield (
-                        f"GRANTS_{resource}_CREATE".upper().replace("-", "_"),
+                        Relationship.generate_grant("CREATE", resource),
                         generate_query(query_filter),
                     )
                     query_filter = {"kind": "Namespace"}
                 yield (
-                    f"GRANTS_{resource}_CREATE".upper().replace("-", "_"),
+                    Relationship.generate_grant("CREATE", resource),
                     generate_query(query_filter),
                 )
                 valid_verbs.remove("create")
@@ -104,10 +105,9 @@ class PolicyRule(BaseModel):
             if not valid_verbs:
                 continue
 
-            if sub_resource is None:
-                tags = [f"GRANTS_{verb}".upper() for verb in valid_verbs]
-            else:
-                tags = [f"GRANTS_{sub_resource}_{verb}".upper() for verb in valid_verbs]
+            tags = [
+                Relationship.generate_grant(verb, sub_resource) for verb in valid_verbs
+            ]
 
             if not self.resourceNames:
                 yield (tags, generate_query(find_filter))

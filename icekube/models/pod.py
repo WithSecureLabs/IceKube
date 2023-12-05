@@ -10,6 +10,7 @@ from icekube.models.node import Node
 from icekube.models.secret import Secret
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.neo4j import mock
+from icekube.relationships import Relationship
 from pydantic import root_validator
 
 CAPABILITIES = [
@@ -249,14 +250,14 @@ class Pod(Resource):
         relationships = super().relationships()
 
         if self.service_account:
-            relationships += [(self, "USES_ACCOUNT", self.service_account)]
+            relationships += [(self, Relationship.USES_ACCOUNT, self.service_account)]
         if self.node:
-            relationships += [(self.node, "HOSTS_POD", self)]
+            relationships += [(self.node, Relationship.HOSTS_POD, self)]
         for secret in self.mounted_secrets:
             relationships += [
                 (
                     self,
-                    "MOUNTS_SECRET",
+                    Relationship.MOUNTS_SECRET,
                     mock(Secret, namespace=cast(str, self.namespace), name=secret),
                 ),
             ]
