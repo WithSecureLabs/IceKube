@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, Generator, List, Optional, Tuple, Type, TypeVar
 
 from icekube.config import config
-from icekube.models import Cluster, BaseResource, Resource
+from icekube.models import BaseResource, Cluster, Resource
 from neo4j import BoltDriver, GraphDatabase
 from neo4j.io import ServiceUnavailable
 
