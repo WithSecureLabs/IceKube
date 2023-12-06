@@ -15,7 +15,6 @@ from pydantic import computed_field
 
 
 class RoleBinding(Resource):
-    subjects: List[Union[ServiceAccount, User, Group]]
     supported_api_groups: List[str] = [
         "rbac.authorization.k8s.io",
         "authorization.openshift.io",

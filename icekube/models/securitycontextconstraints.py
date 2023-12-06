@@ -12,7 +12,6 @@ from pydantic import computed_field
 
 class SecurityContextConstraints(Resource):
     plural: str = "securitycontextconstraints"
-    groups: List[Group]
     supported_api_groups: List[str] = ["security.openshift.io"]
 
     @computed_field
