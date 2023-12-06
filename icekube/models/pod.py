@@ -95,7 +95,7 @@ class Pod(Resource):
         capabilities = set()
 
         for container in self.containers:
-            security_context = container.get("security_context") or {}
+            security_context = container.get("securityContext") or {}
             caps = security_context.get("capabilities") or {}
             addl = caps.get("add") or []
             addl = [x.upper() for x in addl]
