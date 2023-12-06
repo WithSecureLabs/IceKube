@@ -17,7 +17,7 @@ class SecurityContextConstraints(Resource):
     @computed_field
     @cached_property
     def users(self) -> List[Union[User, ServiceAccount]]:
-        users = []
+        users: List[Union[User, ServiceAccount]] = []
         raw_users = self.data.get("users", [])
 
         for user in raw_users:
