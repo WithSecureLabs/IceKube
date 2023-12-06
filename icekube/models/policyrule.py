@@ -9,7 +9,7 @@ from pydantic.fields import Field
 
 
 def generate_query(
-    filters: Dict[str, Union[str, List[str]]]
+    filters: Dict[str, Union[str, List[str]]],
 ) -> Tuple[str, Dict[str, str]]:
     query = "MATCH ({prefix}) WHERE"
     final_filters = {}

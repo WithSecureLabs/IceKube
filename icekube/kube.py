@@ -138,7 +138,7 @@ def api_resources() -> List[APIResource]:
                 kind="Signer",
                 preferred=True,
                 verbs=["approve", "sign"],
-            )
+            ),
         )
 
     api_resources_cache = resources

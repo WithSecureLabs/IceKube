@@ -1,41 +1,39 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, cast
+from functools import cached_property
+from typing import Any, Dict, List, Optional, cast
 
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.relationships import Relationship
-from pydantic import root_validator
+from pydantic import computed_field, field_validator
 
 
 class Secret(Resource):
-    secret_type: str
-    annotations: Dict[str, Any]
     supported_api_groups: List[str] = [""]
 
-    @root_validator(pre=True)
-    def remove_secret_data(cls, values):
-        data = json.loads(values.get("raw", "{}"))
-        if "data" in data:
-            del data["data"]
+    @field_validator("raw")
+    @classmethod
+    def remove_secret_data(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            data = json.loads(v)
 
-        values["raw"] = json.dumps(data)
+            if "data" in data:
+                del data["data"]
 
-        return values
+            return json.dumps(data)
 
-    @root_validator(pre=True)
-    def extract_type(cls, values):
-        data = json.loads(values.get("raw", "{}"))
-        values["secret_type"] = data.get("type", "")
+        return v
 
-        return values
+    @computed_field  # type: ignore
+    @cached_property
+    def secret_type(self) -> str:
+        return cast(str, self.data.get("type", ""))
 
-    @root_validator(pre=True)
-    def extract_annotations(cls, values):
-        data = json.loads(values.get("raw", "{}"))
-        values["annotations"] = data.get("metadata", {}).get("annotations") or {}
-
-        return values
+    @computed_field  # type: ignore
+    @cached_property
+    def annotations(self) -> Dict[str, Any]:
+        return self.data.get("metadata", {}).get("annotations") or {}
 
     def relationships(self, initial: bool = True) -> List[RELATIONSHIP]:
         relationships = super().relationships()

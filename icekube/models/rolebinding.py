@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+from functools import cached_property
 from typing import List, Union
 
 from icekube.models.base import RELATIONSHIP, Resource
@@ -11,33 +11,29 @@ from icekube.models.role import Role
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.models.user import User
 from icekube.relationships import Relationship
-from pydantic import root_validator
-from pydantic.fields import Field
+from pydantic import computed_field
 
 
 class RoleBinding(Resource):
-    role: Union[ClusterRole, Role]
-    subjects: List[Union[ServiceAccount, User, Group]] = Field(default_factory=list)
     supported_api_groups: List[str] = [
         "rbac.authorization.k8s.io",
         "authorization.openshift.io",
     ]
 
-    @root_validator(pre=True)
-    def inject_role_and_subjects(cls, values):
-        data = json.loads(values.get("raw", "{}"))
+    @computed_field  # type: ignore
+    @cached_property
+    def role(self) -> Union[ClusterRole, Role]:
+        role_ref = self.data.get("roleRef")
 
-        ns = values.get("namespace")
-
-        role_ref = data.get("roleRef")
         if role_ref:
-            values["role"] = get_role(role_ref, ns)
+            return get_role(role_ref, self.namespace)
         else:
-            values["role"] = ClusterRole(name="")
+            return ClusterRole(name="")
 
-        values["subjects"] = get_subjects(data.get("subjects", []), ns)
-
-        return values
+    @computed_field  # type: ignore
+    @cached_property
+    def subjects(self) -> List[Union[ServiceAccount, User, Group]]:
+        return get_subjects(self.data.get("subjects", []), self.namespace)
 
     def relationships(
         self,

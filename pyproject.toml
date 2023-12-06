@@ -9,7 +9,7 @@ python = "^3.8"
 kubernetes = "^28.1"
 neo4j = "^4.0"
 typer = "^0.9"
-pydantic = "~2.4.2"
+pydantic = "^2.4.2"
 tqdm = "^4.66.1"
 
 [tool.poetry.group.dev.dependencies]
