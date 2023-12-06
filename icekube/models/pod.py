@@ -61,7 +61,7 @@ CAPABILITIES = [
 class Pod(Resource):
     supported_api_groups: List[str] = [""]
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def service_account(self) -> Optional[ServiceAccount]:
         sa = self.data.get("spec", {}).get("serviceAccountName")
@@ -71,7 +71,7 @@ class Pod(Resource):
         else:
             return None
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def node(self) -> Optional[Node]:
         node = self.data.get("spec", {}).get("nodeName")
@@ -81,12 +81,15 @@ class Pod(Resource):
         else:
             return None
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def containers(self) -> List[Dict[str, Any]]:
-        return self.data.get("spec", {}).get("containers", [])
+        return cast(
+            List[Dict[str, Any]],
+            self.data.get("spec", {}).get("containers", []),
+        )
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def capabilities(self) -> List[str]:
         capabilities = set()
@@ -106,7 +109,7 @@ class Pod(Resource):
 
         return list(capabilities)
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def privileged(self) -> bool:
         containers = self.data.get("spec", {}).get("containers", [])
@@ -119,7 +122,7 @@ class Pod(Resource):
 
         return privileged
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def host_path_volumes(self) -> List[str]:
         volumes = self.data.get("spec", {}).get("volumes") or []
@@ -127,14 +130,14 @@ class Pod(Resource):
 
         return [x["hostPath"]["path"] for x in host_volumes]
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
-    def host_pid(self) -> bool:
+    def hostPID(self) -> bool:
         return self.data.get("spec", {}).get("hostPID") or False
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
-    def host_network(self) -> bool:
+    def hostNetwork(self) -> bool:
         return self.data.get("spec", {}).get("hostNetwork") or False
 
     @property
@@ -228,7 +231,7 @@ class Pod(Resource):
                 (
                     self,
                     Relationship.MOUNTS_SECRET,
-                    Secret(  # type: ignore
+                    Secret(
                         namespace=cast(str, self.namespace),
                         name=secret,
                     ),

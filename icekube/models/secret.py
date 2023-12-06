@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from functools import cached_property
-from typing import Any, Dict, List, cast, Optional
+from typing import Any, Dict, List, Optional, cast
 
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.relationships import Relationship
@@ -25,12 +25,12 @@ class Secret(Resource):
 
         return v
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def secret_type(self) -> str:
         return cast(str, self.data.get("type", ""))
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def annotations(self) -> Dict[str, Any]:
         return self.data.get("metadata", {}).get("annotations") or {}

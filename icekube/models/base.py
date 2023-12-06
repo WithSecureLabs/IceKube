@@ -184,13 +184,14 @@ class Resource(BaseModel):
                 func = f"list_namespaced_{to_camel_case(kind)}"
                 resp = json.loads(
                     getattr(client.CoreV1Api(), func)(
-                        namespace, _preload_content=False
-                    ).data
+                        namespace,
+                        _preload_content=False,
+                    ).data,
                 )
             else:
                 func = f"list_{to_camel_case(kind)}"
                 resp = json.loads(
-                    getattr(client.CoreV1Api(), func)(_preload_content=False).data
+                    getattr(client.CoreV1Api(), func)(_preload_content=False).data,
                 )
 
         for item in resp.get("items", []):

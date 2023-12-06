@@ -65,7 +65,7 @@ class ClusterRoleBinding(Resource):
         "authorization.openshift.io",
     ]
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def role(self) -> Union[ClusterRole, Role]:
         role_ref = self.data.get("roleRef")
@@ -74,7 +74,7 @@ class ClusterRoleBinding(Resource):
         else:
             return ClusterRole(name="")
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def subjects(self) -> List[Union[ServiceAccount, User, Group]]:
         return get_subjects(self.data.get("subjects", []))

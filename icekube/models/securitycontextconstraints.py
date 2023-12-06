@@ -14,7 +14,7 @@ class SecurityContextConstraints(Resource):
     plural: str = "securitycontextconstraints"
     supported_api_groups: List[str] = ["security.openshift.io"]
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def users(self) -> List[Union[User, ServiceAccount]]:
         users: List[Union[User, ServiceAccount]] = []
@@ -29,7 +29,7 @@ class SecurityContextConstraints(Resource):
 
         return users
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def groups(self) -> List[Group]:
         raw_groups = self.data.get("groups", [])

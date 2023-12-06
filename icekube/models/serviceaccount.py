@@ -12,7 +12,7 @@ from pydantic import computed_field
 class ServiceAccount(Resource):
     supported_api_groups: List[str] = [""]
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def secrets(self) -> List[Secret]:
         secrets = []

@@ -14,7 +14,7 @@ class ClusterRole(Resource):
         "authorization.openshift.io",
     ]
 
-    @computed_field
+    @computed_field  # type: ignore
     @cached_property
     def rules(self) -> List[PolicyRule]:
         rules = []
