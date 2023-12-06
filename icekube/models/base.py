@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import logging
 import traceback
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from functools import cached_property
+from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 from icekube.models._helpers import load, save
 from icekube.relationships import Relationship
@@ -50,6 +51,10 @@ class Resource(BaseModel):
         comparison_points = ["apiVersion", "kind", "namespace", "name"]
 
         return all(getattr(self, x) == getattr(other, x) for x in comparison_points)
+
+    @cached_property
+    def data(self) -> Dict[str, Any]:
+        return cast(Dict[str, Any], json.loads(self.raw or "{}"))
 
     @model_validator(mode="before")
     def inject_missing_required_fields(cls, values):

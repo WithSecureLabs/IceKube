@@ -1,36 +1,29 @@
 from __future__ import annotations
 
-import json
+from functools import cached_property
 from typing import List
 
-from icekube.models._helpers import load, save
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.secret import Secret
 from icekube.relationships import Relationship
-from pydantic import model_validator
-from pydantic.fields import Field
+from pydantic import computed_field
 
 
 class ServiceAccount(Resource):
-    secrets: List[Secret] = Field(default_factory=list)
     supported_api_groups: List[str] = [""]
 
-    @model_validator(mode="before")
-    def inject_secrets(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
-
+    @computed_field
+    @cached_property
+    def secrets(self) -> List[Secret]:
         secrets = []
-        raw_secrets = data.get("secrets") or []
+        raw_secrets = self.data.get("secrets") or []
 
         for secret in raw_secrets:
             secrets.append(
-                Secret(  # type: ignore
-                    name=secret.get("name", ""),
-                    namespace=data.get("metadata", {}).get("namespace", ""),
-                )
+                Secret(name=secret.get("name", ""), namespace=self.namespace),
             )
 
-        return save(values, "secrets", secrets)
+        return secrets
 
     def relationships(
         self,

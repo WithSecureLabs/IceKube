@@ -1,30 +1,26 @@
 from __future__ import annotations
 
-import json
+from functools import cached_property
 from typing import List
 
-from icekube.models._helpers import load, save
 from icekube.models.base import Resource
 from icekube.models.policyrule import PolicyRule
-from pydantic import model_validator
-from pydantic.fields import Field
+from pydantic import computed_field
 
 
 class ClusterRole(Resource):
-    rules: List[PolicyRule] = Field(default_factory=list)
     supported_api_groups: List[str] = [
         "rbac.authorization.k8s.io",
         "authorization.openshift.io",
     ]
 
-    @model_validator(mode="before")
-    def inject_rules(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
-
-        raw_rules = data.get("rules") or []
+    @computed_field
+    @cached_property
+    def rules(self) -> List[PolicyRule]:
         rules = []
+        raw_rules = self.data.get("rules") or []
 
         for rule in raw_rules:
             rules.append(PolicyRule(**rule))
 
-        return save(values, "rules", rules)
+        return rules

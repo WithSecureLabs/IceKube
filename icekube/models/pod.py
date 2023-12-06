@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import json
+from functools import cached_property
 from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
-from icekube.models._helpers import load, save
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.node import Node
 from icekube.models.secret import Secret
 from icekube.models.serviceaccount import ServiceAccount
 from icekube.relationships import Relationship
-from pydantic import model_validator
+from pydantic import computed_field
 
 CAPABILITIES = [
     "AUDIT_CONTROL",
@@ -59,60 +59,40 @@ CAPABILITIES = [
 
 
 class Pod(Resource):
-    service_account: Optional[ServiceAccount]
-    node: Optional[Node]
-    containers: List[Dict[str, Any]]
-    capabilities: List[str]
-    host_path_volumes: List[str]
-    privileged: bool
-    hostPID: bool
-    hostNetwork: bool
     supported_api_groups: List[str] = [""]
 
-    @model_validator(mode="before")
-    def inject_service_account(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
-        sa = data.get("spec", {}).get("serviceAccountName")
+    @computed_field
+    @cached_property
+    def service_account(self) -> Optional[ServiceAccount]:
+        sa = self.data.get("spec", {}).get("serviceAccountName")
+
         if sa:
-            values = save(
-                values,
-                "service_account",
-                ServiceAccount(
-                    name=sa,
-                    namespace=values.get("namespace"),
-                ),
-            )
+            return ServiceAccount(name=sa, namespace=self.namespace)
         else:
-            values = save(values, "service_account", None)
+            return None
 
-        return values
+    @computed_field
+    @cached_property
+    def node(self) -> Optional[Node]:
+        node = self.data.get("spec", {}).get("nodeName")
 
-    @model_validator(mode="before")
-    def inject_node(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
-        node = data.get("spec", {}).get("nodeName")
         if node:
-            values = save(values, "node", Node(name=node))
+            return Node(name=node)
         else:
-            values = save(values, "node", None)
+            return None
 
-        return values
+    @computed_field
+    @cached_property
+    def containers(self) -> List[Dict[str, Any]]:
+        return self.data.get("spec", {}).get("containers", [])
 
-    @model_validator(mode="before")
-    def inject_containers(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
-
-        return save(values, "containers", data.get("spec", {}).get("containers", []))
-
-    @model_validator(mode="before")
-    def inject_capabilities(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
-
-        containers = data.get("spec", {}).get("containers", [])
+    @computed_field
+    @cached_property
+    def capabilities(self) -> List[str]:
         capabilities = set()
 
-        for container in containers:
-            security_context = container.get("securityContext") or {}
+        for container in self.containers:
+            security_context = container.get("security_context") or {}
             caps = security_context.get("capabilities") or {}
             addl = caps.get("add") or []
             addl = [x.upper() for x in addl]
@@ -124,13 +104,12 @@ class Pod(Resource):
 
             capabilities.update(add)
 
-        return save(values, "capabilities", list(capabilities))
+        return list(capabilities)
 
-    @model_validator(mode="before")
-    def inject_privileged(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
-
-        containers = data.get("spec", {}).get("containers", [])
+    @computed_field
+    @cached_property
+    def privileged(self) -> bool:
+        containers = self.data.get("spec", {}).get("containers", [])
         privileged = False
         for container in containers:
             context = container.get("securityContext") or {}
@@ -138,31 +117,25 @@ class Pod(Resource):
             if context.get("privileged", False):
                 privileged = True
 
-        return save(values, "privileged", privileged)
+        return privileged
 
-    @model_validator(mode="before")
-    def inject_host_path_volumes(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
-        volumes = data.get("spec", {}).get("volumes") or []
+    @computed_field
+    @cached_property
+    def host_path_volumes(self) -> List[str]:
+        volumes = self.data.get("spec", {}).get("volumes") or []
         host_volumes = [x for x in volumes if "hostPath" in x and x["hostPath"]]
 
-        return save(
-            values, "host_path_volumes", [x["hostPath"]["path"] for x in host_volumes]
-        )
+        return [x["hostPath"]["path"] for x in host_volumes]
 
-    @model_validator(mode="before")
-    def inject_host_pid(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
+    @computed_field
+    @cached_property
+    def host_pid(self) -> bool:
+        return self.data.get("spec", {}).get("hostPID") or False
 
-        return save(values, "hostPID", data.get("spec", {}).get("hostPID") or False)
-
-    @model_validator(mode="before")
-    def inject_host_network(cls, values):
-        data = json.loads(load(values, "raw", "{}"))
-
-        return save(
-            values, "hostNetwork", data.get("spec", {}).get("hostNetwork") or False
-        )
+    @computed_field
+    @cached_property
+    def host_network(self) -> bool:
+        return self.data.get("spec", {}).get("hostNetwork") or False
 
     @property
     def dangerous_host_path(self) -> bool:
