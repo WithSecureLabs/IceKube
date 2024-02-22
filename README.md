@@ -32,6 +32,8 @@ Resource types can also be filtered from IceKube, instructions can be found belo
 
 **NOTE**: In the `neo4j` browser, make sure to disable `Connect result nodes` in the Settings tab on the bottom left. This will stop it rendering every possible relationship automatically between nodes, leaving just the path queried for
 
+The contents of the cluster can also be downloade with `icekube download` or through [freezer](https://github.com/WithSecureLabs/freezer) (a rust implementation of `icekube download`) and then loaded in through `icekube load`.
+
 #### Filtering Resources
 
 It is possible to filter out specific resource types from enumeration. This can be done with the `--ignore` parameter to `enumerate` and `run` which takes the resource types comma-delimtied. For example, if you wish to exclude events and componentstatuses, you could run `icekube run --ignore events,componentstatuses` (NOTE: this is the default)
