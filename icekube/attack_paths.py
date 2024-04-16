@@ -41,6 +41,18 @@ attack_paths = {
     Relationship.CREATE_POD_WITH_SA: f"""
         MATCH (src)-[:GRANTS_PODS_CREATE|{create_workload_query()}]->(ns:Namespace)<-[:WITHIN_NAMESPACE]-(dest:ServiceAccount)
         """,
+    # Subject has permissions to create a workload that can allow breakout onto the underlying
+    # node
+    Relationship.CREATE_PRIVILEGED_WORKLOAD: [
+        # Assume PSA is enabled for cluster versions >= 1.25
+        f"MATCH (src)-[:GRANTS_PODS_CREATE|{create_workload_query()}]->(ns:Namespace)-[:WITHIN_CLUSTER]->(cluster), (dest:Node) "
+        "WHERE cluster.major_minor >= 1.25 AND (ns.psa_enforce <> 'restricted' AND ns.psa_enforce <> 'baseline')",
+    ],
+    # Patch namespace to remove PSA restrictions and create privileged workload
+    Relationship.PATCH_NAMESPACE_TO_BYPASS_PSA: f"""
+        MATCH (src)-[:GRANTS_PODS_CREATE|{create_workload_query()}]->(ns:Namespace)-[:WITHIN_CLUSTER]->(cluster), (dest:Node) 
+        WHERE (src)-[:GRANTS_PATCH|GRANTS_UPDATE]->(ns) AND cluster.major_minor >= 1.25
+        """,
     # Subject has permission to update workload within namespace with target
     # Service Account
     Relationship.UPDATE_WORKLOAD_WITH_SA: f"""
