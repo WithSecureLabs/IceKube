@@ -1,6 +1,5 @@
 import re
-
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from icekube.models.base import RELATIONSHIP, Resource
 from pydantic import computed_field
@@ -16,13 +15,17 @@ class Cluster(Resource):
     def __repr__(self) -> str:
         return f"Cluster(name='{self.name}', version='{self.version}')"
 
-    @computed_field
+    @computed_field  # type: ignore
     @property
     def major_minor_version(self) -> float:
-        return float(re.match(r"^v?(\d+\.\d+)[^\d]", self.version).groups()[0])
+        match = re.match(r"^v?(\d+\.\d+)[^\d]", self.version)
+        # failed to retrieve, set to a super new version
+        if not match:
+            return 100.0
+        return float(match.groups()[0])
 
     @property
-    def db_labels(self) -> Dict[str, str]:
+    def db_labels(self) -> Dict[str, Any]:
         return {
             **self.unique_identifiers,
             "plural": self.plural,
