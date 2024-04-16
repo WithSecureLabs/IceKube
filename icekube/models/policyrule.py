@@ -114,3 +114,25 @@ class PolicyRule(BaseModel):
             else:
                 names = [name.replace("*", ".*") for name in self.resourceNames]
                 yield (tags, generate_query({**find_filter, "name": names}))
+
+            # Special case for Namespace objects as they are both cluster-wide and
+            # namespaced
+            if namespace and resource == "namespaces":
+                permitted_namespaced_verbs = set("get patch update delete".split())
+                namespace_verbs = permitted_namespaced_verbs.intersection(valid_verbs)
+
+                namespace_filter = {
+                    k: v for k, v in find_filter.items() if k != "namespace"
+                }
+
+                tags = [
+                    Relationship.generate_grant(verb, sub_resource)
+                    for verb in namespace_verbs
+                ]
+
+                # Ensure that any resourceNames still allow the actual namespace name
+                if self.resourceNames:
+                    if not any(fnmatch("namespaces", x) for x in self.resourceNames):
+                        return
+
+                yield (tags, generate_query({**namespace_filter, "name": [namespace]}))

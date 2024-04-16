@@ -10,7 +10,7 @@ from icekube.models._helpers import load, save
 from icekube.relationships import Relationship
 from icekube.utils import to_camel_case
 from kubernetes import client
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, computed_field
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +55,10 @@ class Resource(BaseModel):
     @cached_property
     def data(self) -> Dict[str, Any]:
         return cast(Dict[str, Any], json.loads(self.raw or "{}"))
+
+    @computed_field
+    def labels(self) -> Dict[str, str]:
+        return self.data.get("metadata", {}).get("labels", {})
 
     @model_validator(mode="before")
     def inject_missing_required_fields(cls, values):
