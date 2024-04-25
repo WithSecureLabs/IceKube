@@ -135,4 +135,8 @@ class PolicyRule(BaseModel):
                     if not any(fnmatch("namespaces", x) for x in self.resourceNames):
                         return
 
-                yield (tags, generate_query({**namespace_filter, "name": [namespace]}))
+                if tags:
+                    yield (
+                        tags,
+                        generate_query({**namespace_filter, "name": [namespace]}),
+                    )
