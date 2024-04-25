@@ -137,4 +137,8 @@ attack_paths = {
         })
         """,
     ],
+    Relationship.IS_CLUSTER_ADMIN: """
+        MATCH (src:Node), (dest:ClusterRoleBinding)-[:GRANTS_PERMISSION]->(:ClusterRole {name: "cluster-admin"})
+        WHERE any(x in ["master", "control-plane"] WHERE x in src.node_roles)
+        """,
 }
