@@ -83,7 +83,9 @@ class PolicyRule(BaseModel):
             for verb in self.verbs:
                 valid_verbs.update(fnfilter(api_resource.verbs, verb.lower()))
 
-            if "create" in valid_verbs and sub_resource is None:
+            verbs_for_namespace = set("create list".split()).intersection(valid_verbs)
+
+            if verbs_for_namespace and sub_resource is None:
                 if namespace:
                     query_filter: Dict[str, Union[str, List[str]]] = {
                         "kind": "Namespace",
@@ -91,16 +93,19 @@ class PolicyRule(BaseModel):
                     }
                 else:
                     query_filter = {"apiVersion": "N/A", "kind": "Cluster"}
+                    for verb in verbs_for_namespace:
+                        yield (
+                            Relationship.generate_grant(verb.upper(), resource),
+                            generate_query(query_filter),
+                        )
+                    query_filter = {"kind": "Namespace"}
+                for verb in verbs_for_namespace:
                     yield (
-                        Relationship.generate_grant("CREATE", resource),
+                        Relationship.generate_grant(verb.upper(), resource),
                         generate_query(query_filter),
                     )
-                    query_filter = {"kind": "Namespace"}
-                yield (
-                    Relationship.generate_grant("CREATE", resource),
-                    generate_query(query_filter),
-                )
-                valid_verbs.remove("create")
+                if "create" in verbs_for_namespace:
+                    valid_verbs.remove("create")
 
             if not valid_verbs:
                 continue

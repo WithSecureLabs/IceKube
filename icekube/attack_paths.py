@@ -73,6 +73,19 @@ attack_paths = {
     Relationship.ACCESS_SECRET: "MATCH (src)-[:GRANTS_GET|GRANTS_LIST|GRANTS_WATCH]->(dest:Secret)",
     # Generate service account token
     Relationship.GENERATE_TOKEN: "MATCH (src)-[:GRANTS_TOKEN_CREATE]->(dest:ServiceAccount)",
+    # Create a long-lived secret for a service account
+    Relationship.CREATE_SECRET_WITH_TOKEN: [
+        # Uses a workload to read the generated secret
+        f"""
+        MATCH (src)-[:GRANTS_SECRETS_CREATE]->(ns:Namespace)<-[:WITHIN_NAMESPACE]-(dest:ServiceAccount)
+        WHERE (src)-[:GRANTS_PODS_CREATE|{create_workload_query()}]->(ns)
+        """,
+        # Uses secret list to read the generated secret
+        """
+        MATCH (src)-[:GRANTS_SECRETS_CREATE]->(ns:Namespace)<-[:WITHIN_NAMESPACE]-(dest:ServiceAccount)
+        WHERE (src)-[:GRANTS_SECRETS_LIST]->(ns)
+        """,
+    ],
     # RBAC escalate verb to change a role to be more permissive
     Relationship.RBAC_ESCALATE_TO: [
         # RoleBindings
