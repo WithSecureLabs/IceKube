@@ -11,6 +11,8 @@ class Relationship:
     in this direction in neo4j: (ObjectOne)-[:RELATIONSHIP]->(ObjectTwo)
     """
 
+    IS_CLUSTER_ADMIN: ClassVar[str] = "IS_CLUSTER_ADMIN"
+
     HOSTS_POD: ClassVar[str] = "HOSTS_POD"
 
     AUTHENTICATION_TOKEN_FOR: ClassVar[str] = "AUTHENTICATION_TOKEN_FOR"

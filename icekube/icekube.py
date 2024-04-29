@@ -72,6 +72,9 @@ def relationship_generator(
     with driver.session() as session:
         logger.info(f"Generating relationships for {resource}")
         for source, relationship, target in resource.relationships(initial):
+            logger.debug(
+                f"Creating relationship: {source} -> {relationship} -> {target}"
+            )
             if isinstance(source, Resource):
                 src_cmd, src_kwargs = get(source, prefix="src")
             else:
