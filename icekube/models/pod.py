@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import jmespath
-import json
 from functools import cached_property
 from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
 
+import jmespath
 from icekube.models.base import RELATIONSHIP, Resource
 from icekube.models.node import Node
 from icekube.models.secret import Secret

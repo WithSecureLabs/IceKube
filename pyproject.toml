@@ -5,7 +5,7 @@ description = ""
 authors = ["Mohit Gupta <mohit.gupta@withsecure.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">= 3.8.1"
 kubernetes = "^28.1.0"
 neo4j = "^4.4.11"
 typer = "^0.9"
@@ -16,7 +16,7 @@ jmespath = "^1.0.1"
 [tool.poetry.group.dev.dependencies]
 types-pyyaml = "*"
 ipython = "*"
-flake8 = "*"
+flake8 = "^6.1.0"
 flake8-comprehensions = "*"
 flake8-debugger = "*"
 flake8-docstrings = "*"
@@ -25,7 +25,7 @@ flake8-mutable = "*"
 flake8-todo = "*"
 isort = {version = "^4.3.21", extras = ["pyproject"]}
 mypy = "*"
-pyflakes = {git = "https://github.com/pycqa/pyflakes", rev = "c688d2b02ac6e3416775b88d6411ee6a3e8a51ec"}
+pyflakes = "*"
 pytest = "*"
 pytest-cov = "*"
 rope = "*"
