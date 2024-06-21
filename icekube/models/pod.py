@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import jmespath
 import json
 from functools import cached_property
 from itertools import product
@@ -64,7 +65,7 @@ class Pod(Resource):
     @computed_field  # type: ignore
     @cached_property
     def service_account(self) -> Optional[ServiceAccount]:
-        sa = self.data.get("spec", {}).get("serviceAccountName")
+        sa = jmespath.search("spec.serviceAccountName", self.data)
 
         if sa:
             return ServiceAccount(name=sa, namespace=self.namespace)
@@ -74,7 +75,7 @@ class Pod(Resource):
     @computed_field  # type: ignore
     @cached_property
     def node(self) -> Optional[Node]:
-        node = self.data.get("spec", {}).get("nodeName")
+        node = jmespath.search("spec.nodeName", self.data)
 
         if node:
             return Node(name=node)
@@ -85,8 +86,7 @@ class Pod(Resource):
     @cached_property
     def containers(self) -> List[Dict[str, Any]]:
         return cast(
-            List[Dict[str, Any]],
-            self.data.get("spec", {}).get("containers", []),
+            List[Dict[str, Any]], jmespath.search("spec.containers[]", self.data) or []
         )
 
     @computed_field  # type: ignore
@@ -95,9 +95,7 @@ class Pod(Resource):
         capabilities = set()
 
         for container in self.containers:
-            security_context = container.get("securityContext") or {}
-            caps = security_context.get("capabilities") or {}
-            addl = caps.get("add") or []
+            addl = jmespath.search("securityContext.capabilities.add", container) or []
             addl = [x.upper() for x in addl]
             add = set(addl)
 
@@ -112,33 +110,26 @@ class Pod(Resource):
     @computed_field  # type: ignore
     @cached_property
     def privileged(self) -> bool:
-        containers = self.data.get("spec", {}).get("containers", [])
-        privileged = False
-        for container in containers:
-            context = container.get("securityContext") or {}
-
-            if context.get("privileged", False):
-                privileged = True
-
-        return privileged
+        privileged = (
+            jmespath.search("spec.containers[].securityContext.privileged", self.data)
+            or []
+        )
+        return any(privileged)
 
     @computed_field  # type: ignore
     @cached_property
     def host_path_volumes(self) -> List[str]:
-        volumes = self.data.get("spec", {}).get("volumes") or []
-        host_volumes = [x for x in volumes if "hostPath" in x and x["hostPath"]]
-
-        return [x["hostPath"]["path"] for x in host_volumes]
+        return jmespath.search("spec.volumes[].hostPath.path", self.data) or []
 
     @computed_field  # type: ignore
     @cached_property
     def hostPID(self) -> bool:
-        return self.data.get("spec", {}).get("hostPID") or False
+        return jmespath.search("spec.hostPID", self.data) or False
 
     @computed_field  # type: ignore
     @cached_property
     def hostNetwork(self) -> bool:
-        return self.data.get("spec", {}).get("hostNetwork") or False
+        return jmespath.search("spec.hostNetwork", self.data) or False
 
     @property
     def dangerous_host_path(self) -> bool:
@@ -180,27 +171,13 @@ class Pod(Resource):
 
     @property
     def mounted_secrets(self) -> List[str]:
-        if self.raw:
-            data = json.loads(self.raw)
-        else:
-            return []
-
-        secrets = []
-
-        volumes = data.get("spec", {}).get("volumes") or []
-
-        for volume in volumes:
-            if volume.get("secret"):
-                secrets.append(volume["secret"]["secretName"])
-
-        for container in data.get("spec", {}).get("containers") or []:
-            if not container.get("env"):
-                continue
-            for env in container["env"]:
-                try:
-                    secrets.append(env["valueFrom"]["secretKeyRef"]["name"])
-                except (KeyError, TypeError):
-                    pass
+        secrets = jmespath.search("spec.volumes[].secret.secretName", self.data) or []
+        secrets += (
+            jmespath.search(
+                "spec.containers[].env[].valueFrom.secretKeyRef.name", self.data
+            )
+            or []
+        )
 
         return secrets
 

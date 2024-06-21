@@ -11,6 +11,7 @@ neo4j = "^4.4.11"
 typer = "^0.9"
 pydantic = "^2.5.2"
 tqdm = "^4.66.1"
+jmespath = "^1.0.1"
 
 [tool.poetry.group.dev.dependencies]
 types-pyyaml = "*"
