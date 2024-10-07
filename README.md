@@ -53,35 +53,23 @@ Here is a quick introductory way on running IceKube for those new to the project
 * Click the cog wheel on the bottom left to open settings
 * Near the bottom of the new side-pane, de-select `Connect result nodes`
 * Enter the following query into the query bar at the top
-    * `MATCH p = shortestPath((src)-[*]->(cr:ClusterRole {name: 'cluster-admin'})) WHERE ALL (r in relationships(p) WHERE EXISTS (r.attack_path)) AND (src:ServiceAccount OR src:Pod or src:User or src:Group) AND all(n in [[x in nodes(p)][-2]] WHERE (n:ClusterRoleBinding)-[:GRANTS_PERMISSION]->(cr)) RETURN p`
+    * `MATCH p = SHORTEST 1 (src)-[r {attack_path: 1}]->+(crb:ClusterRoleBinding)-[:GRANTS_PERMISSION {attack_path: 1}]->(cr:ClusterRole {name: "cluster-admin"}) RETURN p`
     * This will find routes to cluster administrator from service accounts, pods, users, or groups
 * Of the new window made with the query, click the Fullscreen button
 * Roam around the graph generated, clicking on nodes or relationships to get more details on the right where wanted
 
 ## Example Cypher Queries
 
-The following will find the shortest path from a Pod within the namespace `starting` to the ClusterRole `cluster-admin` using `attack_path` relationships
+The following query will find all resources that have `cluster-admin` permissions. This is enforced through a Cluster Role Binding to ensure the permissions are cluster-wide
 
 ```cypher
-MATCH p = shortestPath((src:Pod {namespace: 'starting'})-[*]->(dest:ClusterRole {name: 'cluster-admin'})) WHERE ALL (r in relationships(p) WHERE EXISTS (r.attack_path)) RETURN p
+MATCH p = SHORTEST 1 (src)-[r {attack_path: 1}]->+(crb:ClusterRoleBinding)-[:GRANTS_PERMISSION {attack_path: 1}]->(cr:ClusterRole {name: "cluster-admin"}) RETURN p
 ```
 
-Same thing, but gives additional data on the Namespace a resource is within
+This performs the same, but restricts the query to start at nodes of type Pod / ServiceAccount / User / Group
 
 ```cypher
-MATCH p = shortestPath((src:Pod {namespace: 'starting'})-[*]->(dest:ClusterRole {name: 'cluster-admin'})) WHERE ALL (r in relationships(p) WHERE EXISTS (r.attack_path)) UNWIND nodes(p) AS n MATCH (n)-[r:WITHIN_NAMESPACE]->(ns:Namespace) RETURN p, ns, r
-```
-
-Finds all Pods / ServiceAccounts / Users / Groups that have access to the ClusterRole `cluster-admin` through a ClusterRoleBinding to ensure it has a cluster wide scope
-
-```cypher
-MATCH p = shortestPath((src)-[*]->(cr:ClusterRole {name: 'cluster-admin'})) WHERE ALL (r in relationships(p) WHERE EXISTS (r.attack_path)) AND (src:ServiceAccount OR src:Pod or src:User or src:Group) AND all(n in [[x in nodes(p)][-2]] WHERE (n:ClusterRoleBinding)-[:GRANTS_PERMISSION]->(cr)) RETURN p
-```
-
-Finds any node that can get to the ClusterRole `cluster-admin` through a ClusterRoleBinding to ensure it has a cluster wide scope
-
-```cypher
-MATCH p1=((crb:ClusterRoleBinding)-[:GRANTS_PERMISSION]->(cr:ClusterRole {name: 'cluster-admin'})), p = shortestPath((src)-[*]->(crb)) WHERE ALL (r in relationships(p) WHERE r.attack_path = 1) AND (src <> crb) RETURN p, p1
+MATCH p = SHORTEST 1 (src)-[r {attack_path: 1}]->+(crb:ClusterRoleBinding)-[:GRANTS_PERMISSION {attack_path: 1}]->(cr:ClusterRole {name: "cluster-admin"}) WHERE (src:ServiceAccount OR src:Pod or src:User or src:Group) RETURN p
 ```
 
 ## Acknowledgements

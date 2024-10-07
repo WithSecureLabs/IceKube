@@ -2,7 +2,7 @@ version: "3"
 
 services:
   neo4j:
-    image: neo4j:4.4
+    image: neo4j:5
     environment:
       NEO4J_AUTH: none
     ports:
