@@ -133,7 +133,7 @@ def generate_relationships(threaded: bool = False) -> None:
 
 def remove_attack_paths() -> None:
     with get_driver().session() as session:
-        session.run("MATCH ()-[r]-() WHERE EXISTS (r.attack_path) DELETE r")
+        session.run("MATCH ()-[r]-() WHERE r.attack_path IS NOT NULL DELETE r")
 
 
 def setup_attack_paths() -> None:
