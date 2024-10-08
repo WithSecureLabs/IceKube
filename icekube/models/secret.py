@@ -21,6 +21,19 @@ class Secret(Resource):
             if "data" in data:
                 del data["data"]
 
+            last_applied_configuration = (
+                data.get("metadata", {})
+                .get("annotations", {})
+                .get("kubectl.kubernetes.io/last-applied-configuration")
+            )
+            if last_applied_configuration:
+                last_applied_configuration = json.loads(last_applied_configuration)
+                if "data" in last_applied_configuration:
+                    del last_applied_configuration["data"]
+                data["metadata"]["annotations"][
+                    "kubectl.kubernetes.io/last-applied-configuration"
+                ] = json.dumps(last_applied_configuration)
+
             return json.dumps(data)
 
         return v
