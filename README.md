@@ -72,6 +72,19 @@ This performs the same, but restricts the query to start at nodes of type Pod / 
 MATCH p = SHORTEST 1 (src)-[r {attack_path: 1}]->+(crb:ClusterRoleBinding)-[:GRANTS_PERMISSION {attack_path: 1}]->(cr:ClusterRole {name: "cluster-admin"}) WHERE (src:ServiceAccount OR src:Pod or src:User or src:Group) RETURN p
 ```
 
+Using the old `shortestPath` syntax:
+
+```cypher
+MATCH (crb:ClusterRoleBinding)-[r:GRANTS_PERMISSION {attack_path: 1}]->(cr:ClusterRole {name: 'cluster-admin'})
+WITH crb, cr, r
+MATCH (src) WHERE src:ServiceAccount OR src:Pod OR src:User or src:Group
+WITH src, crb, cr, r
+UNWIND src as s
+MATCH p=shortestPath((s)-[*]->(crb))
+WHERE all(r in relationships(p) where r.attack_path is not null)
+RETURN p, cr, r
+```
+
 ## Acknowledgements
 
 - [BloodHound](https://github.com/BloodHoundAD/BloodHound) - The original project showing the power of graph databases for security
