@@ -10,7 +10,7 @@ from icekube.models._helpers import load, save
 from icekube.relationships import Relationship
 from icekube.utils import to_camel_case
 from kubernetes import client
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, Field, computed_field, model_validator, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,12 @@ class Resource(BaseModel):
         comparison_points = ["apiVersion", "kind", "namespace", "name"]
 
         return all(getattr(self, x) == getattr(other, x) for x in comparison_points)
+
+    @field_validator("kind")
+    @classmethod
+    def kind_can_only_have_underscore(cls, v: str) -> str:
+        s = "".join([x if x.isalnum() else "_" for x in v])
+        return s
 
     @cached_property
     def data(self) -> Dict[str, Any]:
