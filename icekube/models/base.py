@@ -10,7 +10,13 @@ from icekube.models._helpers import load, save
 from icekube.relationships import Relationship
 from icekube.utils import to_camel_case
 from kubernetes import client
-from pydantic import BaseModel, Field, computed_field, model_validator, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
 logger = logging.getLogger(__name__)
 
